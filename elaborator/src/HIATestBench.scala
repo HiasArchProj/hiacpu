@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: Unlicense
 // SPDX-FileCopyrightText: 2024 Jiuyang Liu <liu@jiuyang.me>
-package org.chipsalliance.gcd.elaborator
+package org.chipsalliance.hia.elaborator
 
 import mainargs._
-import org.chipsalliance.gcd.{GCDTestBench, GCDTestBenchParameter, TestVerbatimParameter}
-import org.chipsalliance.gcd.elaborator.Elaborator
-import org.chipsalliance.gcd.elaborator.GCD.GCDParameterMain
+import org.chipsalliance.hia.{HIATestBench, HIATestBenchParameter, TestVerbatimParameter}
+import org.chipsalliance.hia.elaborator.Elaborator
+import org.chipsalliance.hia.elaborator.HIA.HIAParameterMain
 
-object GCDTestBench extends Elaborator {
+object HIATestBench extends Elaborator {
   @main
-  case class GCDTestBenchParameterMain(
+  case class HIATestBenchParameterMain(
     @arg(name = "testVerbatimParameter") testVerbatimParameter: TestVerbatimParameterMain,
-    @arg(name = "gcdParameter") gcdParameter:                   GCDParameterMain,
+    @arg(name = "hiaParameter") hiaParameter:                   HIAParameterMain,
     @arg(name = "timeout") timeout:                             Int,
     @arg(name = "testSize") testSize:                           Int) {
-    def convert: GCDTestBenchParameter = GCDTestBenchParameter(
+    def convert: HIATestBenchParameter = HIATestBenchParameter(
       testVerbatimParameter.convert,
-      gcdParameter.convert,
+      hiaParameter.convert,
       timeout,
       testSize
     )
@@ -40,14 +40,14 @@ object GCDTestBench extends Elaborator {
   implicit def TestVerbatimParameterMainParser: ParserForClass[TestVerbatimParameterMain] =
     ParserForClass[TestVerbatimParameterMain]
 
-  implicit def GCDParameterMainParser: ParserForClass[GCDParameterMain] =
-    ParserForClass[GCDParameterMain]
+  implicit def HIAParameterMainParser: ParserForClass[HIAParameterMain] =
+    ParserForClass[HIAParameterMain]
 
-  implicit def GCDTestBenchParameterMainParser: ParserForClass[GCDTestBenchParameterMain] =
-    ParserForClass[GCDTestBenchParameterMain]
+  implicit def HIATestBenchParameterMainParser: ParserForClass[HIATestBenchParameterMain] =
+    ParserForClass[HIATestBenchParameterMain]
 
   @main
-  def config(@arg(name = "parameter") parameter: GCDTestBenchParameterMain) =
+  def config(@arg(name = "parameter") parameter: HIATestBenchParameterMain) =
     configImpl(parameter.convert)
 
   @main
@@ -56,7 +56,7 @@ object GCDTestBench extends Elaborator {
     @arg(name = "run-firtool") runFirtool: mainargs.Flag,
     @arg(name = "target-dir") targetDir:   os.Path
   ) =
-    designImpl[GCDTestBench, GCDTestBenchParameter](parameter, runFirtool.value, targetDir)
+    designImpl[HIATestBench, HIATestBenchParameter](parameter, runFirtool.value, targetDir)
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
 }

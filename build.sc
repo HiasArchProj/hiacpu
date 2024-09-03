@@ -26,8 +26,8 @@ trait Chisel extends millbuild.dependencies.chisel.build.Chisel {
   override def millSourcePath = os.pwd / "dependencies" / "chisel"
 }
 
-object gcd extends GCD
-trait GCD extends millbuild.common.HasChisel with ScalafmtModule {
+object hia extends HIA
+trait HIA extends millbuild.common.HasChisel with ScalafmtModule {
   def scalaVersion = T(deps.scalaVer)
 
   def chiselModule = Some(chisel)
@@ -45,7 +45,7 @@ trait Elaborator extends millbuild.common.ElaboratorModule {
   def circtInstallPath =
     T.input(PathRef(os.Path(T.ctx().env("CIRCT_INSTALL_PATH"))))
 
-  def generators = Seq(gcd)
+  def generators = Seq(hia)
 
   def mainargsIvy = deps.mainargs
 

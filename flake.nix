@@ -24,10 +24,10 @@
         formatter = pkgs.nixpkgs-fmt;
         legacyPackages = pkgs;
         devShells.default = pkgs.mkShell ({
-          inputsFrom = [ pkgs.gcd.gcd-compiled pkgs.gcd.tb-dpi-lib ];
+          inputsFrom = [ pkgs.hia.hia-compiled pkgs.hia.tb-dpi-lib ];
           nativeBuildInputs = [ pkgs.cargo pkgs.rustfmt pkgs.rust-analyzer ];
           RUST_SRC_PATH =
             "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-        } // pkgs.gcd.tb-dpi-lib.env);
+        } // pkgs.hia.tb-dpi-lib.env);
       });
 }

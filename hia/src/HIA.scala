@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 // SPDX-FileCopyrightText: 2024 Jiuyang Liu <liu@jiuyang.me>
 
-package org.chipsalliance.gcd
+package org.chipsalliance.hia
 
 import chisel3._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
@@ -13,30 +13,30 @@ import chisel3.properties.{AnyClassType, Class, Property}
 import chisel3.util.circt.dpi.{RawClockedNonVoidFunctionCall, RawUnclockedNonVoidFunctionCall}
 import chisel3.util.{Counter, DecoupledIO, HasExtModuleInline, RegEnable, Valid}
 
-object GCDParameter {
-  implicit def rwP: upickle.default.ReadWriter[GCDParameter] =
+object HIAParameter {
+  implicit def rwP: upickle.default.ReadWriter[HIAParameter] =
     upickle.default.macroRW
 }
 
-/** Parameter of [[GCD]] */
-case class GCDParameter(width: Int, useAsyncReset: Boolean) extends SerializableModuleParameter
+/** Parameter of [[HIA]] */
+case class HIAParameter(width: Int, useAsyncReset: Boolean) extends SerializableModuleParameter
 
-/** Verification IO of [[GCD]] */
-class GCDProbe(parameter: GCDParameter) extends Bundle {
+/** Verification IO of [[HIA]] */
+class HIAProbe(parameter: HIAParameter) extends Bundle {
   val busy = Bool()
 }
 
-/** Metadata of [[GCD]]. */
+/** Metadata of [[HIA]]. */
 @instantiable
-class GCDOM(parameter: GCDParameter) extends Class {
+class HIAOM(parameter: HIAParameter) extends Class {
   val width:         Property[Int] = IO(Output(Property[Int]()))
   val useAsyncReset: Property[Boolean] = IO(Output(Property[Boolean]()))
   width := Property(parameter.width)
   useAsyncReset := Property(parameter.useAsyncReset)
 }
 
-/** Interface of [[GCD]]. */
-class GCDInterface(parameter: GCDParameter) extends Bundle {
+/** Interface of [[HIA]]. */
+class HIAInterface(parameter: HIAParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(if (parameter.useAsyncReset) AsyncReset() else Bool())
   val input = Flipped(DecoupledIO(new Bundle {
@@ -44,15 +44,15 @@ class GCDInterface(parameter: GCDParameter) extends Bundle {
     val y = UInt(parameter.width.W)
   }))
   val output = Valid(UInt(parameter.width.W))
-  val probe = Output(Probe(new GCDProbe(parameter), layers.Verification))
+  val probe = Output(Probe(new HIAProbe(parameter), layers.Verification))
   val om = Output(Property[AnyClassType]())
 }
 
-/** Hardware Implementation of GCD */
+/** Hardware Implementation of HIA */
 @instantiable
-class GCD(val parameter: GCDParameter)
-    extends FixedIORawModule(new GCDInterface(parameter))
-    with SerializableModule[GCDParameter]
+class HIA(val parameter: HIAParameter)
+    extends FixedIORawModule(new HIAInterface(parameter))
+    with SerializableModule[HIAParameter]
     with ImplicitClock
     with ImplicitReset {
   override protected def implicitClock: Clock = io.clock
@@ -77,50 +77,50 @@ class GCD(val parameter: GCDParameter)
   io.output.valid := startupFlag && !busy
 
   // Assign Probe
-  val probeWire: GCDProbe = Wire(new GCDProbe(parameter))
+  val probeWire: HIAProbe = Wire(new HIAProbe(parameter))
   define(io.probe, ProbeValue(probeWire))
   probeWire.busy := busy
 
   // Assign Metadata
-  val omInstance: Instance[GCDOM] = Instantiate(new GCDOM(parameter))
+  val omInstance: Instance[HIAOM] = Instantiate(new HIAOM(parameter))
   io.om := omInstance.getPropertyReference.asAnyClassType
 }
 
-object GCDTestBenchParameter {
-  implicit def rwP: upickle.default.ReadWriter[GCDTestBenchParameter] =
+object HIATestBenchParameter {
+  implicit def rwP: upickle.default.ReadWriter[HIATestBenchParameter] =
     upickle.default.macroRW
 }
 
-/** Parameter of [[GCD]]. */
-case class GCDTestBenchParameter(
+/** Parameter of [[HIA]]. */
+case class HIATestBenchParameter(
   testVerbatimParameter: TestVerbatimParameter,
-  gcdParameter:          GCDParameter,
+  hiaParameter:          HIAParameter,
   timeout:               Int,
   testSize:              Int)
     extends SerializableModuleParameter {
   require(
-    (testVerbatimParameter.useAsyncReset && gcdParameter.useAsyncReset) ||
-      (!testVerbatimParameter.useAsyncReset && !gcdParameter.useAsyncReset),
+    (testVerbatimParameter.useAsyncReset && hiaParameter.useAsyncReset) ||
+      (!testVerbatimParameter.useAsyncReset && !hiaParameter.useAsyncReset),
     "Reset Type check failed."
   )
 }
 
 @instantiable
-class GCDTestBenchOM(parameter: GCDTestBenchParameter) extends Class {
-  val gcd = IO(Output(Property[AnyClassType]()))
+class HIATestBenchOM(parameter: HIATestBenchParameter) extends Class {
+  val hia = IO(Output(Property[AnyClassType]()))
   @public
-  val gcdIn = IO(Input(Property[AnyClassType]()))
-  gcd := gcdIn
+  val hiaIn = IO(Input(Property[AnyClassType]()))
+  hia := hiaIn
 }
 
-class GCDTestBenchInterface(parameter: GCDTestBenchParameter) extends Bundle {
+class HIATestBenchInterface(parameter: HIATestBenchParameter) extends Bundle {
   val om = Output(Property[AnyClassType]())
 }
 
 @instantiable
-class GCDTestBench(val parameter: GCDTestBenchParameter)
-    extends FixedIORawModule(new GCDTestBenchInterface(parameter))
-    with SerializableModule[GCDTestBenchParameter]
+class HIATestBench(val parameter: HIATestBenchParameter)
+    extends FixedIORawModule(new HIATestBenchInterface(parameter))
+    with SerializableModule[HIATestBenchParameter]
     with ImplicitClock
     with ImplicitReset {
   override protected def implicitClock: Clock = verbatim.io.clock
@@ -130,11 +130,11 @@ class GCDTestBench(val parameter: GCDTestBenchParameter)
     new TestVerbatim(parameter.testVerbatimParameter)
   )
   // Instantiate DUT.
-  val dut: Instance[GCD] = Instantiate(new GCD(parameter.gcdParameter))
+  val dut: Instance[HIA] = Instantiate(new HIA(parameter.hiaParameter))
   // Instantiate OM
-  val omInstance = Instantiate(new GCDTestBenchOM(parameter))
+  val omInstance = Instantiate(new HIATestBenchOM(parameter))
   io.om := omInstance.getPropertyReference.asAnyClassType
-  omInstance.gcdIn := dut.io.om
+  omInstance.hiaIn := dut.io.om
 
   dut.io.clock := implicitClock
   dut.io.reset := implicitReset
@@ -144,17 +144,17 @@ class GCDTestBench(val parameter: GCDTestBenchParameter)
   simulationTime := simulationTime + 1.U
   // For each timeout ticks, check it
   val (_, callWatchdog) = Counter(true.B, parameter.timeout / 2)
-  val watchdogCode = RawUnclockedNonVoidFunctionCall("gcd_watchdog", UInt(8.W))(callWatchdog)
+  val watchdogCode = RawUnclockedNonVoidFunctionCall("hia_watchdog", UInt(8.W))(callWatchdog)
   when(watchdogCode =/= 0.U) {
     stop(cf"""{"event":"SimulationStop","reason": ${watchdogCode},"cycle":${simulationTime}}\n""")
   }
   class TestPayload extends Bundle {
-    val x = UInt(parameter.gcdParameter.width.W)
-    val y = UInt(parameter.gcdParameter.width.W)
-    val result = UInt(parameter.gcdParameter.width.W)
+    val x = UInt(parameter.hiaParameter.width.W)
+    val y = UInt(parameter.hiaParameter.width.W)
+    val result = UInt(parameter.hiaParameter.width.W)
   }
   val request =
-    RawClockedNonVoidFunctionCall("gcd_input", Valid(new TestPayload))(
+    RawClockedNonVoidFunctionCall("hia_input", Valid(new TestPayload))(
       dut.io.clock,
       !dut.io.reset.asBool && dut.io.input.ready
     )
@@ -178,24 +178,24 @@ class GCDTestBench(val parameter: GCDTestBenchParameter)
 
   AssertProperty(
     inputFire |=> inputNotFire.repeatAtLeast(1) ### outputFire,
-    label = Some("GCD_ALWAYS_RESPONSE")
+    label = Some("HIA_ALWAYS_RESPONSE")
   )
   AssertProperty(
     inputFire |=> not(inputNotFire.repeatAtLeast(1) ### (outputNotFire.and(inputFire))),
-    label = Some("GCD_NO_DOUBLE_FIRE")
+    label = Some("HIA_NO_DOUBLE_FIRE")
   )
   AssertProperty(
     outputFire |-> checkRight,
-    label = Some("GCD_ASSERT_RESULT_CHECK")
+    label = Some("HIA_ASSERT_RESULT_CHECK")
   )
   // TODO: need generate $rose function in SVA
   // CoverProperty(
   //   rose(outputFire).nonConsecutiveRepeat(parameter.testSize - 1),
-  //   label = Some("GCD_COVER_FIRE")
+  //   label = Some("HIA_COVER_FIRE")
   // )
   CoverProperty(
     inputNotValid,
-    label = Some("GCD_COVER_BACK_PRESSURE")
+    label = Some("HIA_COVER_BACK_PRESSURE")
   )
 }
 object TestVerbatimParameter {
@@ -218,10 +218,10 @@ class TestVerbatimOM(parameter: TestVerbatimParameter) extends Class {
   val dumpFunctionName: Property[String] = IO(Output(Property[String]()))
   val clockFlipTick:    Property[Int] = IO(Output(Property[Int]()))
   val resetFlipTick:    Property[Int] = IO(Output(Property[Int]()))
-  val gcd = IO(Output(Property[AnyClassType]()))
+  val hia = IO(Output(Property[AnyClassType]()))
   @public
-  val gcdIn = IO(Input(Property[AnyClassType]()))
-  gcd := gcdIn
+  val hiaIn = IO(Input(Property[AnyClassType]()))
+  hia := hiaIn
   useAsyncReset := Property(parameter.useAsyncReset)
   initFunctionName := Property(parameter.initFunctionName)
   dumpFunctionName := Property(parameter.dumpFunctionName)

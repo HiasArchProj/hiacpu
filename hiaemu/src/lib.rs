@@ -6,7 +6,7 @@ pub mod dpi;
 pub mod drive;
 
 #[derive(Parser)]
-pub(crate) struct GcdArgs {
+pub(crate) struct HiaArgs {
     #[cfg(feature = "trace")]
     #[arg(long)]
     dump_start: u64,
@@ -35,7 +35,7 @@ pub(crate) struct GcdArgs {
     clock_flip_time: u64,
 }
 
-impl GcdArgs {
+impl HiaArgs {
     pub fn setup_logger(&self) -> Result<(), Box<dyn std::error::Error>> {
         let log_level: Level = self.log_level.parse()?;
         let global_logger = FmtSubscriber::builder()

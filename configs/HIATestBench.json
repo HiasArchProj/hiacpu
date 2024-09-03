@@ -1,12 +1,12 @@
 {
     "testVerbatimParameter": {
         "useAsyncReset": false,
-        "initFunctionName": "gcd_init",
+        "initFunctionName": "hia_init",
         "dumpFunctionName": "dump_wave",
         "clockFlipTick": 1,
         "resetFlipTick": 100
     },
-    "gcdParameter": {
+    "hiaParameter": {
         "width": 16,
         "useAsyncReset": false
     },

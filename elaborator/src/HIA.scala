@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: Unlicense
 // SPDX-FileCopyrightText: 2024 Jiuyang Liu <liu@jiuyang.me>
-package org.chipsalliance.gcd.elaborator
+package org.chipsalliance.hia.elaborator
 
 import mainargs._
-import org.chipsalliance.gcd.{GCD, GCDParameter}
-import org.chipsalliance.gcd.elaborator.Elaborator
+import org.chipsalliance.hia.{HIA, HIAParameter}
+import org.chipsalliance.hia.elaborator.Elaborator
 
-object GCD extends Elaborator {
+object HIA extends Elaborator {
   @main
-  case class GCDParameterMain(
+  case class HIAParameterMain(
     @arg(name = "xLen") xLen:                   Int,
     @arg(name = "useAsyncReset") useAsyncReset: Boolean) {
-    def convert: GCDParameter = GCDParameter(xLen, useAsyncReset)
+    def convert: HIAParameter = HIAParameter(xLen, useAsyncReset)
   }
 
-  implicit def GCDParameterMainParser: ParserForClass[GCDParameterMain] =
-    ParserForClass[GCDParameterMain]
+  implicit def HIAParameterMainParser: ParserForClass[HIAParameterMain] =
+    ParserForClass[HIAParameterMain]
 
   @main
-  def config(@arg(name = "parameter") parameter: GCDParameterMain) = configImpl(
+  def config(@arg(name = "parameter") parameter: HIAParameterMain) = configImpl(
     parameter.convert
   )
 
@@ -28,7 +28,7 @@ object GCD extends Elaborator {
     @arg(name = "run-firtool") runFirtool: mainargs.Flag,
     @arg(name = "target-dir") targetDir:   os.Path
   ) =
-    designImpl[GCD, GCDParameter](parameter, runFirtool.value, targetDir)
+    designImpl[HIA, HIAParameter](parameter, runFirtool.value, targetDir)
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
 }

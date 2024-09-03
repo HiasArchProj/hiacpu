@@ -3,19 +3,19 @@
 
 { lib, newScope, }:
 lib.makeScope newScope (scope: {
-  design-target = "GCD";
-  tb-target = "GCDTestBench";
+  design-target = "HIA";
+  tb-target = "HIATestBench";
 
   # RTL
-  gcd-compiled = scope.callPackage ./gcd.nix { target = scope.design-target; };
+  hia-compiled = scope.callPackage ./hia.nix { target = scope.design-target; };
   elaborate = scope.callPackage ./elaborate.nix {
-    elaborator = scope.gcd-compiled.elaborator;
+    elaborator = scope.hia-compiled.elaborator;
   };
   mlirbc = scope.callPackage ./mlirbc.nix { };
   rtl = scope.callPackage ./rtl.nix { };
 
   # Testbench
-  tb-compiled = scope.callPackage ./gcd.nix { target = scope.tb-target; };
+  tb-compiled = scope.callPackage ./hia.nix { target = scope.tb-target; };
   tb-elaborate = scope.callPackage ./elaborate.nix {
     elaborator = scope.tb-compiled.elaborator;
   };

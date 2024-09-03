@@ -3,7 +3,7 @@ use std::ffi::{c_char, CString};
 use std::sync::Mutex;
 
 use crate::drive::Driver;
-use crate::GcdArgs;
+use crate::HiaArgs;
 use clap::Parser;
 use num_bigint::BigUint;
 use svdpi::sys::dpi::{svBitVecVal, svLogic};
@@ -63,14 +63,14 @@ unsafe fn fill_test_payload(dst: *mut SvBitVecVal, data_width: u64, payload: &Te
 //----------------------
 
 #[no_mangle]
-unsafe extern "C" fn gcd_init() {
-    let args = GcdArgs::parse();
+unsafe extern "C" fn hia_init() {
+    let args = HiaArgs::parse();
     args.setup_logger().unwrap();
-    let scope = SvScope::get_current().expect("failed to get scope in gcd_init");
+    let scope = SvScope::get_current().expect("failed to get scope in hia_init");
     let driver = Box::new(Driver::new(scope, &args));
 
     let mut dpi_target = DPI_TARGET.lock().unwrap();
-    assert!(dpi_target.is_none(), "gcd_init should be called only once");
+    assert!(dpi_target.is_none(), "hia_init should be called only once");
     *dpi_target = Some(driver);
 
     if let Some(driver) = dpi_target.as_mut() {
@@ -79,7 +79,7 @@ unsafe extern "C" fn gcd_init() {
 }
 
 #[no_mangle]
-unsafe extern "C" fn gcd_watchdog(reason: *mut c_char) {
+unsafe extern "C" fn hia_watchdog(reason: *mut c_char) {
     let mut driver = DPI_TARGET.lock().unwrap();
     if let Some(driver) = driver.as_mut() {
         *reason = driver.watchdog() as c_char;
@@ -87,7 +87,7 @@ unsafe extern "C" fn gcd_watchdog(reason: *mut c_char) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn gcd_input(payload: *mut svBitVecVal) {
+unsafe extern "C" fn hia_input(payload: *mut svBitVecVal) {
     let mut driver = DPI_TARGET.lock().unwrap();
     if let Some(driver) = driver.as_mut() {
         fill_test_payload(payload, driver.data_width, &driver.get_input());
