@@ -5,3 +5,6 @@ out/
 result*
 /dependencies/
 target/
+.envrc
+.direnv
+.bsp/
