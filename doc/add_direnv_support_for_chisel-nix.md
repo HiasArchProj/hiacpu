@@ -1,24 +1,25 @@
-# 为chisel-nix添加direnv支持
+# Add Direnv Support for chisel-nix
 
-## nix
-对于项目来说, nix是一种管理项目环境依赖的方式, 它可以在最大程度上保证项目的课重现性以及环境的一致性. 通常对于某一个项目来说, 可以编写`shell.nix`文件来描述项目的环境依赖, 并且通过`nix-shell`命令来进入项目的环境. 或是通过`flake.nix`文件来描述项目的环境依赖, 并且通过`nix develop`命令来进入项目的环境. 与`shell.nix`不同的是, `flake.nix`同时也可以描述项目的构建过程, 并且可以通过`nix build`命令来构建项目.
+## Nix
+Nix is a way to manage project environment dependencies, ensuring maximum reproducibility and consistency. For a given project, a `shell.nix` file can be written to describe its dependencies, and the environment can be entered using the `nix-shell` command. Alternatively, a `flake.nix` file can be used to describe the environment and entered using the `nix develop` command. Unlike `shell.nix`, `flake.nix` can also describe the project's build process, and the project can be built using the `nix build` command.
 
-## direnv
-由于对于某个项目来说, 其目录和`shell.nix`文件是一一对应的, 我们每次进入目录输入的`nix-shell`命令往往也是固定的. 因此我们可以通过`direnv`来自动化这个过程. `direnv`是一个nix的工具, 它可以在shell检测到进入到项目中时自动进入项目的环境, 相当于是自动执行`nix-shell`命令.
+## Direnv
+Since a project directory corresponds directly to its `shell.nix` file, the `nix-shell` command we type each time we enter the directory is often fixed. Therefore, we can automate this process using `direnv`. Direnv is a Nix tool that automatically enters the project environment when the shell detects you're inside a project, essentially running the `nix-shell` command for you.
 
-## vscode + nix + direnv + extension
-使用vscode开发项目时, vscode需要读入项目的环境变量. 因此, vscode必须意识到自己处在nix环境中, 为了实现这一点, 我们可以使用direnv插件. direnv是一个可以根据当前目录下的`.envrc`文件来设置环境变量的工具. 我们可以在`.envrc`文件中写入`use_flake`来告诉vscode当前目录处在nix环境中, 并且需要在shell中输入`direnv allow`来使得direnv生效.
-为了让direnv在自己的shell中生效, 需要修改配置文件使得每次进入项目目录时自动唤起direnv, 例如, 对于我所使用的zsh来说, 需要在~/.zshrc的最后一行加入:`eval "$(direnv hook zsh)"`. 在普通目录下由于没有`direnv allow`, 因此不会产生影响.
+## VSCode + Nix + Direnv + Extension
+When developing a project in VSCode, the editor needs to load the environment variables for the project. Therefore, VSCode must recognize it's in a Nix environment. To achieve this, we can use the Direnv plugin. Direnv sets environment variables based on the `.envrc` file in the current directory. By writing `use_flake` in the `.envrc` file, we can notify VSCode that the current directory is in a Nix environment. In the shell, you'll need to run `direnv allow` to activate Direnv for the directory.
 
-## take away message
-总而言之, 在vscode环境下开发chisel-nix项目时需要以下几步:
-1. 安装nix:https://nixos.org/download/
-2. 环境中安装nixenv: `nix-env -iA nixpkgs.nixenv`
-3. vscode插件安装direnv插件
-4. 在项目目录下创建`.envrc`文件, 写入`use_flake`: `echo "use_flake" > .envrc`
-5. 在shell中输入`direnv allow`使得direnv对这个目录生效, 对于同一个目录只需要输入一次
-6. `echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc` for zsh
+To activate Direnv in your shell, you'll need to modify the configuration file so that Direnv is triggered every time you enter the project directory. For example, for Zsh, add the following line to the end of your `~/.zshrc` file: `eval "$(direnv hook zsh)"`. This will have no effect in directories without `direnv allow`.
 
-## 参考
+## Takeaway
+In summary, when developing a chisel-nix project in a VSCode environment, follow these steps:
+1. Install Nix: https://nixos.org/download/
+2. Install nixenv: `nix-env -iA nixpkgs.nixenv`
+3. Install the Direnv plugin for VSCode.
+4. Create a `.envrc` file in the project directory and add `use_flake`: `echo "use_flake" > .envrc`
+5. Run `direnv allow` in the shell to activate Direnv for the directory (only needed once per directory).
+6. Add the following line to `~/.zshrc` for Zsh: `echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc`
+
+## References
 1. https://grass.show/post/create-environment-with-nix-and-direnv/
 2. https://nixos.wiki/wiki/Development_environment_with_nix-shell#Using_Direnv
