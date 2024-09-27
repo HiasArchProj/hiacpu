@@ -45,10 +45,10 @@ impl Driver {
             dump_end: args.dump_end,
             #[cfg(feature = "trace")]
             dump_started: false,
-            data_width: args.data_width,
-            timeout: args.timeout,
-            test_size: args.test_size,
-            clock_flip_time: args.clock_flip_time,
+            data_width: env!("DESIGN_DATA_WIDTH").parse().unwrap(),
+            timeout: env!("DESIGN_TIMEOUT").parse().unwrap(),
+            test_size: env!("DESIGN_TEST_SIZE").parse().unwrap(),
+            clock_flip_time: env!("CLOCK_FLIP_TIME").parse().unwrap(),
             test_num: 0,
             last_input_cycle: 0,
         }
@@ -107,8 +107,8 @@ impl Driver {
             WATCHDOG_FINISH
         } else if tick - self.last_input_cycle > self.timeout {
             error!(
-                "[{}] watchdog timeout, last input tick = {}",
-                tick, self.last_input_cycle
+                "[{}] watchdog timeout, last input tick = {}, {} tests completed",
+                tick, self.last_input_cycle, self.test_num
             );
             WATCHDOG_TIMEOUT
         } else {

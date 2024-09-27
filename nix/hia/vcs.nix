@@ -1,9 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2024 Jiuyang Liu <liu@jiuyang.me>
 
-{ lib, bash, stdenv, rtl, dpi-lib, vcs-fhs-env }:
+{ lib
+, bash
+, stdenv
+, rtl
+, dpi-lib
+, vcs-fhs-env
+, runCommand
+}:
 
-stdenv.mkDerivation {
+let
+  binName = "hia-vcs-simulator";
+in
+stdenv.mkDerivation (finalAttr: {
   name = "vcs";
 
   # Add "sandbox = relaxed" into /etc/nix/nix.conf, and run `systemctl restart nix-daemon`
@@ -14,6 +24,8 @@ stdenv.mkDerivation {
   dontPatchELF = true;
 
   src = rtl;
+
+  meta.mainProgram = binName;
 
   buildPhase = ''
     runHook preBuild
@@ -33,8 +45,8 @@ stdenv.mkDerivation {
       } \
       -file filelist.f \
       -assert enable_diag \
-      ${dpi-lib}/lib/libhiaemu.a \
-      -o hia-vcs-simulator
+      ${dpi-lib}/lib/${dpi-lib.libOutName} \
+      -o ${binName}
 
     runHook postBuild
   '';
@@ -44,6 +56,15 @@ stdenv.mkDerivation {
     inherit vcs-fhs-env;
     inherit dpi-lib;
     inherit rtl;
+
+    tests.simple-sim = runCommand "${binName}-test" { __noChroot = true; } ''
+      export HIA_SIM_RESULT_DIR="$(mktemp -d)"
+      export DATA_ONLY=1
+      ${finalAttr.finalPackage}/bin/${binName}
+
+      mkdir -p "$out"
+      cp -vr "$HIA_SIM_RESULT_DIR"/result/* "$out/"
+    '';
   };
 
   shellHook = ''
@@ -55,18 +76,17 @@ stdenv.mkDerivation {
     runHook preInstall
 
     mkdir -p $out/bin $out/lib
-    cp hia-vcs-simulator $out/lib
-    cp -r hia-vcs-simulator.daidir $out/lib
+    cp ${binName} $out/lib
+    cp -r ${binName}.daidir $out/lib
 
-    # We need to carefully handle string escape here, so don't use makeWrapper
-    tee $out/bin/hia-vcs-simulator <<EOF
-    #!${bash}/bin/bash
-    export LD_LIBRARY_PATH="$out/lib/hia-vcs-simulator.daidir:\$LD_LIBRARY_PATH"
-    _argv="\$@"
-    ${vcs-fhs-env}/bin/vcs-fhs-env -c "$out/lib/hia-vcs-simulator \$_argv"
-    EOF
-    chmod +x $out/bin/hia-vcs-simulator
+    substitute ${./scripts/vcs-wrapper.sh} $out/bin/${binName} \
+      --subst-var-by shell "${bash}/bin/bash" \
+      --subst-var-by dateBin "$(command -v date)" \
+      --subst-var-by vcsSimBin "$out/lib/${binName}" \
+      --subst-var-by vcsSimDaidir "$out/lib/${binName}.daidir" \
+      --subst-var-by vcsFhsEnv "${vcs-fhs-env}/bin/vcs-fhs-env"
+    chmod +x $out/bin/${binName}
 
     runHook postInstall
   '';
-}
+})
