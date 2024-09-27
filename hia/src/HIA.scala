@@ -13,6 +13,8 @@ import chisel3.properties.{AnyClassType, Class, Property}
 import chisel3.util.circt.dpi.{RawClockedNonVoidFunctionCall, RawUnclockedNonVoidFunctionCall}
 import chisel3.util.{Counter, DecoupledIO, HasExtModuleInline, RegEnable, Valid}
 
+import org.chipsalliance.hia.{Core, DmemPortIO, ImemPortIO, WORD_LEN}
+
 object HIAParameter {
   implicit def rwP: upickle.default.ReadWriter[HIAParameter] =
     upickle.default.macroRW
@@ -39,6 +41,12 @@ class HIAOM(parameter: HIAParameter) extends Class {
 class HIAInterface(parameter: HIAParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(if (parameter.useAsyncReset) AsyncReset() else Bool())
+  val exit = Output(Bool())
+  val pc = Output(UInt(WORD_LEN.W))
+  val gp = Output(UInt(WORD_LEN.W))
+  val imem = Flipped(new ImemPortIO())
+  val dmem = Flipped(new DmemPortIO())
+
   val input = Flipped(DecoupledIO(new Bundle {
     val x = UInt(parameter.width.W)
     val y = UInt(parameter.width.W)
@@ -57,6 +65,13 @@ class HIA(val parameter: HIAParameter)
     with ImplicitReset {
   override protected def implicitClock: Clock = io.clock
   override protected def implicitReset: Reset = io.reset
+
+  val core = Module(new Core())
+  core.io.imem <> io.imem
+  core.io.dmem <> io.dmem
+  core.io.exit := io.exit
+  core.io.gp := io.gp
+  core.io.pc := io.pc
 
   val x: UInt = Reg(chiselTypeOf(io.input.bits.x))
   // Block X-state propagation
