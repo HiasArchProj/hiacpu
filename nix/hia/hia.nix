@@ -1,18 +1,28 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2024 Jiuyang Liu <liu@jiuyang.me>
 
-{ lib, stdenv, fetchMillDeps, makeWrapper, jdk21
+{ lib
+, stdenv
+, fetchMillDeps
+, makeWrapper
+, jdk21
 
-# chisel deps
-, mill, espresso, circt-full, jextract-21, add-determinism
-
+  # chisel deps
+, mill
+, espresso
+, circt-full
+, jextract-21
+, add-determinism
 , projectDependencies
 
-, target }:
+, target
+}:
 
 let
   self = stdenv.mkDerivation rec {
     name = "hia";
+
+    mainClass = "org.chipsalliance.hia.elaborator.${target}Main";
 
     src = with lib.fileset;
       toSource {
@@ -25,25 +35,27 @@ let
         ];
       };
 
-    passthru.millDeps = fetchMillDeps {
-      inherit name;
-      src = with lib.fileset;
-        toSource {
-          root = ./../..;
-          fileset = unions [ ./../../build.sc ./../../common.sc ];
-        };
-      millDepsHash = "sha256-ziXh1Pta9MQEzLzjtuppx1ll/57CdKADdSjCNdcIOGg=";
-      nativeBuildInputs = [ projectDependencies.setupHook ];
+    passthru = {
+      millDeps = fetchMillDeps {
+        inherit name;
+        src = with lib.fileset;
+          toSource {
+            root = ./../..;
+            fileset = unions [ ./../../build.sc ./../../common.sc ];
+          };
+        millDepsHash = "sha256-+wfEF4JGRRjPfTue9coK82UzHTsfQvVfuRPQXoZXEag=";
+        nativeBuildInputs = [ projectDependencies.setupHook ];
+      };
+
+      editable = self.overrideAttrs (_: {
+        shellHook = ''
+          setupSubmodulesEditable
+          mill mill.bsp.BSP/install 0
+        '';
+      });
+
+      inherit target;
     };
-
-    passthru.editable = self.overrideAttrs (_: {
-      shellHook = ''
-        setupSubmodulesEditable
-        mill mill.bsp.BSP/install 0
-      '';
-    });
-
-    passthru.elaborateTarget = target;
 
     shellHook = ''
       setupSubmodules
@@ -62,9 +74,14 @@ let
       projectDependencies.setupHook
     ];
 
-    env.CIRCT_INSTALL_PATH = circt-full;
+    env = {
+      CIRCT_INSTALL_PATH = circt-full;
+      JEXTRACT_INSTALL_PATH = jextract-21;
+    };
 
     outputs = [ "out" "elaborator" ];
+
+    meta.mainProgram = "elaborator";
 
     buildPhase = ''
       mill -i '__.assembly'
@@ -79,7 +96,8 @@ let
 
       mkdir -p $elaborator/bin
       makeWrapper ${jdk21}/bin/java $elaborator/bin/elaborator \
-        --add-flags "--enable-preview -Djava.library.path=${circt-full}/lib -cp $out/share/java/elaborator.jar org.chipsalliance.hia.elaborator.${target}"
+        --add-flags "--enable-preview -Djava.library.path=${circt-full}/lib -cp $out/share/java/elaborator.jar ${mainClass}"
     '';
   };
-in self
+in
+self

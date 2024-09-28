@@ -13,7 +13,7 @@ import $file.dependencies.chisel.build
 import $file.common
 
 object deps {
-  val scalaVer = "2.13.14"
+  val scalaVer = "2.13.15"
   val mainargs = ivy"com.lihaoyi::mainargs:0.5.0"
   val oslib = ivy"com.lihaoyi::os-lib:0.9.1"
   val upickle = ivy"com.lihaoyi::upickle:3.3.1"
@@ -37,7 +37,7 @@ trait HIA extends millbuild.common.HasChisel with ScalafmtModule {
 }
 
 object elaborator extends Elaborator
-trait Elaborator extends millbuild.common.ElaboratorModule {
+trait Elaborator extends millbuild.common.ElaboratorModule with ScalafmtModule {
   def scalaVersion = T(deps.scalaVer)
 
   def panamaconverterModule = panamaconverter

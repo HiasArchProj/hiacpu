@@ -4,10 +4,17 @@ package org.chipsalliance.hia.elaborator
 
 import mainargs._
 import org.chipsalliance.hia.{HIATestBench, HIATestBenchParameter, TestVerbatimParameter}
-import org.chipsalliance.hia.elaborator.Elaborator
-import org.chipsalliance.hia.elaborator.HIA.HIAParameterMain
+import org.chipsalliance.hia.elaborator.HIAMain.HIAParameterMain
+import chisel3.experimental.util.SerializableModuleElaborator
 
-object HIATestBench extends Elaborator {
+object HIATestBenchMain extends SerializableModuleElaborator {
+  val topName = "HIATestBench"
+
+  implicit object PathRead extends TokensReader.Simple[os.Path] {
+    def shortName = "path"
+    def read(strs: Seq[String]) = Right(os.Path(strs.head, os.pwd))
+  }
+
   @main
   case class HIATestBenchParameterMain(
     @arg(name = "testVerbatimParameter") testVerbatimParameter: TestVerbatimParameterMain,
@@ -47,16 +54,21 @@ object HIATestBench extends Elaborator {
     ParserForClass[HIATestBenchParameterMain]
 
   @main
-  def config(@arg(name = "parameter") parameter: HIATestBenchParameterMain) =
-    configImpl(parameter.convert)
+  def config(
+    @arg(name = "parameter") parameter:  HIATestBenchParameterMain,
+    @arg(name = "target-dir") targetDir: os.Path = os.pwd
+  ) =
+    os.write.over(targetDir / s"${topName}.json", configImpl(parameter.convert))
 
   @main
   def design(
-    @arg(name = "parameter") parameter:    os.Path,
-    @arg(name = "run-firtool") runFirtool: mainargs.Flag,
-    @arg(name = "target-dir") targetDir:   os.Path
-  ) =
-    designImpl[HIATestBench, HIATestBenchParameter](parameter, runFirtool.value, targetDir)
+    @arg(name = "parameter") parameter:  os.Path,
+    @arg(name = "target-dir") targetDir: os.Path = os.pwd
+  ) = {
+    val (firrtl, annos) = designImpl[HIATestBench, HIATestBenchParameter](os.read.stream(parameter))
+    os.write.over(targetDir / s"${topName}.fir", firrtl)
+    os.write.over(targetDir / s"${topName}.anno.json", annos)
+  }
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
 }

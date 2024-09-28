@@ -3,11 +3,12 @@
 package org.chipsalliance.hia.elaborator
 
 import mainargs._
-import org.chipsalliance.hia.{HIA, HIAParameter}
+import org.chipsalliance.hia.{HIAFormal, HIAFormalParameter}
+import org.chipsalliance.hia.elaborator.HIAMain.HIAParameterMain
 import chisel3.experimental.util.SerializableModuleElaborator
 
-object HIAMain extends SerializableModuleElaborator {
-  val topName = "HIA"
+object HIAFormalMain extends SerializableModuleElaborator {
+  val topName = "HIAFormal"
 
   implicit object PathRead extends TokensReader.Simple[os.Path] {
     def shortName = "path"
@@ -15,20 +16,20 @@ object HIAMain extends SerializableModuleElaborator {
   }
 
   @main
-  case class HIAParameterMain(
-    @arg(name = "width") width:                 Int,
-    @arg(name = "useAsyncReset") useAsyncReset: Boolean) {
-    require(width > 0, "width must be a non-negative integer")
-    require(chisel3.util.isPow2(width), "width must be a power of 2")
-    def convert: HIAParameter = HIAParameter(width, useAsyncReset)
+  case class HIAFormalParameterMain(
+    @arg(name = "hiaParameter") hiaParameter: HIAParameterMain) {
+    def convert: HIAFormalParameter = HIAFormalParameter(hiaParameter.convert)
   }
 
   implicit def HIAParameterMainParser: ParserForClass[HIAParameterMain] =
     ParserForClass[HIAParameterMain]
 
+  implicit def HIAFormalParameterMainParser: ParserForClass[HIAFormalParameterMain] =
+    ParserForClass[HIAFormalParameterMain]
+
   @main
   def config(
-    @arg(name = "parameter") parameter:  HIAParameterMain,
+    @arg(name = "parameter") parameter:  HIAFormalParameterMain,
     @arg(name = "target-dir") targetDir: os.Path = os.pwd
   ) =
     os.write.over(targetDir / s"${topName}.json", configImpl(parameter.convert))
@@ -38,7 +39,7 @@ object HIAMain extends SerializableModuleElaborator {
     @arg(name = "parameter") parameter:  os.Path,
     @arg(name = "target-dir") targetDir: os.Path = os.pwd
   ) = {
-    val (firrtl, annos) = designImpl[HIA, HIAParameter](os.read.stream(parameter))
+    val (firrtl, annos) = designImpl[HIAFormal, HIAFormalParameter](os.read.stream(parameter))
     os.write.over(targetDir / s"${topName}.fir", firrtl)
     os.write.over(targetDir / s"${topName}.anno.json", annos)
   }
