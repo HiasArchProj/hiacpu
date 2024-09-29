@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
+import org.chipsalliance.hia.Instructions._
 
 object DecodeStageParameter {
   implicit def rwP: upickle.default.ReadWriter[DecodeStageParameter] = upickle.default.macroRW[DecodeStageParameter]
