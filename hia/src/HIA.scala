@@ -48,7 +48,6 @@ class HIAInterface(parameter: HIAParameter) extends Bundle {
   val imem = Flipped(new ImemPortIO(parameter.width))
   val dmem = Flipped(new DmemPortIO(parameter.width))
 
-
   val input = Flipped(DecoupledIO(new Bundle {
     val x = UInt(parameter.width.W)
     val y = UInt(parameter.width.W)
@@ -64,7 +63,7 @@ class HIA(val parameter: HIAParameter)
     extends FixedIORawModule(new HIAInterface(parameter))
     with SerializableModule[HIAParameter]
     // with ImplicitClock
-    // with ImplicitReset 
+    // with ImplicitReset
     {
   // override protected def implicitClock: Clock = io.clock
   // override protected def implicitReset: Reset = io.reset
@@ -75,8 +74,6 @@ class HIA(val parameter: HIAParameter)
   core.io.exit := io.exit
   core.io.gp := io.gp
   core.io.pc := io.pc
-
-
 
   val x: UInt = Reg(chiselTypeOf(io.input.bits.x))
   // Block X-state propagation

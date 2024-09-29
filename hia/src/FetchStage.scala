@@ -5,25 +5,23 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 
-
 object FetchStageParameter {
-    implicit def rwP: upickle.default.ReadWriter[FetchStageParameter] = upickle.default.macroRW[FetchStageParameter]
+  implicit def rwP: upickle.default.ReadWriter[FetchStageParameter] = upickle.default.macroRW[FetchStageParameter]
 }
 
-case class FetchStageParameter()extends SerializableModuleParameter {}
+case class FetchStageParameter() extends SerializableModuleParameter {}
 
 class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {}
 
 @instantiable
-class FetchStage(parameter: FetchStageParameter) 
+class FetchStage(parameter: FetchStageParameter)
     extends FixedIORawModule(new FetchStageInterface(parameter))
-    with  SerializableModule[FetchStageParameter] 
+    with SerializableModule[FetchStageParameter]
     with Public {
 
-  val WORD_LEN      = 32
+  val WORD_LEN = 32
   val START_ADDR = 0.U(WORD_LEN.W)
   val BUBBLE = 0x00000013.U(WORD_LEN.W)
-
 
   val stall_flag = Wire(Bool()) // True when data hazard occurs at EX stage
   // IF/ID pipeline reg
