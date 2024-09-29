@@ -28,13 +28,13 @@ case class HIAParameter(width: Int, useAsyncReset: Boolean) extends Serializable
 // }
 
 /** Metadata of [[HIA]]. */
-// @instantiable
-// class HIAOM(parameter: HIAParameter) extends Class {
-//   val width:         Property[Int] = IO(Output(Property[Int]()))
-//   val useAsyncReset: Property[Boolean] = IO(Output(Property[Boolean]()))
-//   width := Property(parameter.width)
-//   useAsyncReset := Property(parameter.useAsyncReset)
-// }
+@instantiable
+class HIAOM(parameter: HIAParameter) extends Class {
+  val width:         Property[Int] = IO(Output(Property[Int]()))
+  val useAsyncReset: Property[Boolean] = IO(Output(Property[Boolean]()))
+  width := Property(parameter.width)
+  useAsyncReset := Property(parameter.useAsyncReset)
+}
 
 /** Interface of [[HIA]]. */
 class HIAInterface(parameter: HIAParameter) extends Bundle {
@@ -48,7 +48,7 @@ class HIAInterface(parameter: HIAParameter) extends Bundle {
   val imem = Flipped(new ImemPortIO(parameter.width))
   val dmem = Flipped(new DmemPortIO(parameter.width))
 
-  
+
   val input = Flipped(DecoupledIO(new Bundle {
     val x = UInt(parameter.width.W)
     val y = UInt(parameter.width.W)

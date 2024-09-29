@@ -1,0 +1,387 @@
+Running phase: unpackPhase
+@nix { "action": "setPhase", "phase": "unpackPhase" }
+unpacking source archive /nix/store/mjkhp6s33wzrnrkpacbpjc93d6rpwini-source
+source root is source
+JAVA HOME dir set to /build/tmp.ZTbInIkSzO
+Running phase: patchPhase
+@nix { "action": "setPhase", "phase": "patchPhase" }
+[nix-shell] linking '/nix/store/2vg6z3j1sls66zy4p2h82d6dz6yzkabm-source' to 'dependencies/chisel'
+Running phase: updateAutotoolsGnuConfigScriptsPhase
+@nix { "action": "setPhase", "phase": "updateAutotoolsGnuConfigScriptsPhase" }
+Running phase: configurePhase
+@nix { "action": "setPhase", "phase": "configurePhase" }
+no configure script, doing nothing
+Running phase: buildPhase
+@nix { "action": "setPhase", "phase": "buildPhase" }
+[info] compiling 5 Scala sources to /build/source/out/mill-build/compile.dest/classes ...
+[warn] /build/source/dependencies/chisel/build.sc:129:23: trait SbtModuleTests in trait SbtModule is deprecated (since Mill 0.11.10): Use SbtTests instead
+[warn]   object test extends SbtModuleTests with TestModule.ScalaTest {
+[warn]                       ^
+[warn] /build/source/dependencies/chisel/build.sc:139:23: trait SbtModuleTests in trait SbtModule is deprecated (since Mill 0.11.10): Use SbtTests instead
+[warn]   object test extends SbtModuleTests with TestModule.ScalaTest {
+[warn]                       ^
+[warn] /build/source/dependencies/chisel/build.sc:221:23: trait SbtModuleTests in trait SbtModule is deprecated (since Mill 0.11.10): Use SbtTests instead
+[warn]   object test extends SbtModuleTests with TestModule.ScalaTest {
+[warn]                       ^
+[warn] /build/source/dependencies/chisel/build.sc:234:23: trait SbtModuleTests in trait SbtModule is deprecated (since Mill 0.11.10): Use SbtTests instead
+[warn]   object test extends SbtModuleTests with TestModule.ScalaTest {
+[warn]                       ^
+[warn] four warnings found
+[info] done compiling
+Compiling compiler interface...
+[info] compiling 7 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/macros/2.13.15/compile.dest/classes ...
+[info] done compiling
+[info] compiling 61 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/firrtl/2.13.15/compile.dest/classes ...
+[warn] 3 deprecations (since 2.13.0)
+[warn] 7 deprecations (since Chisel 5.0)
+[warn] 10 deprecations in total; re-run with -deprecation for details
+[warn] 14 feature warnings; re-run with -feature for details
+[warn] four warnings found
+[info] done compiling
+[info] compiling 120 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/core/2.13.15/compile.dest/classes ...
+[warn] 3 deprecations (since 2.13.0); re-run with -deprecation for details
+[warn] one warning found
+[info] done compiling
+[info] compiling 5 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/svsim/2.13.15/compile.dest/classes ...
+[info] done compiling
+[info] compiling 7 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/plugin/2.13.15/compile.dest/classes ...
+[info] done compiling
+[info] compiling 104 Scala sources to /build/source/out/chisel/compile.dest/classes ...
+[warn] 107 deprecations
+[warn] 1 deprecation (since Chisel 5.0)
+[warn] 108 deprecations in total; re-run with -deprecation for details
+[warn] three warnings found
+[info] done compiling
+[info] compiling 25 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/firrtl/2.13.15/test/compile.dest/classes ...
+[warn] 2 feature warnings; re-run with -feature for details
+[warn] one warning found
+[info] done compiling
+[info] compiling 2 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/svsim/2.13.15/test/compile.dest/classes ...
+[info] done compiling
+[info] compiling 202 Scala sources to /build/source/out/chisel/test/compile.dest/classes ...
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/AutoClonetypeSpec.scala:346:22: Implicit definition should have explicit type (inferred Int) [quickfixable]
+[warn]         implicit val x = 8
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:38:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:68:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:90:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:122:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:172:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:186:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:218:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:232:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/LTLSpec.scala:277:22: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]         implicit val info = SourceLine("Foo.scala", 1, 2)
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/aop/SelectSpec.scala:284:20: Implicit definition should have explicit type (inferred chisel3.internal.MacroGenerated) [quickfixable]
+[warn]       implicit val mg = new chisel3.internal.MacroGenerated {}
+[warn]                    ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/aop/SelectSpec.scala:306:20: Implicit definition should have explicit type (inferred chisel3.internal.MacroGenerated) [quickfixable]
+[warn]       implicit val mg = new chisel3.internal.MacroGenerated {}
+[warn]                    ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:26:16: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[chiselTests.experimental.SimpleBundleDataView.BundleA,chiselTests.experimental.SimpleBundleDataView.BundleB]) [quickfixable]
+[warn]   implicit val v1 = DataView[BundleA, BundleB](a => new BundleB(a.w), _.foo -> _.bar)
+[warn]                ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:27:16: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[chiselTests.experimental.SimpleBundleDataView.BundleB,chiselTests.experimental.SimpleBundleDataView.BundleA]) [quickfixable]
+[warn]   implicit val v2 = v1.invert(b => new BundleA(b.w))
+[warn]                ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:36:16: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[chisel3.Vec[chisel3.UInt],chiselTests.experimental.VecBundleDataView.MyBundle]) [quickfixable]
+[warn]   implicit val v2 = v1.invert(_ => new MyBundle)
+[warn]                ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:50:16: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[chiselTests.experimental.FlatDecoupledDataView.FlatDecoupled,chisel3.util.DecoupledIO[chiselTests.experimental.FlatDecoupledDataView.FizzBuzz]]) [quickfixable]
+[warn]   implicit val view = DataView[FlatDecoupled, DecoupledIO[FizzBuzz]](
+[warn]                ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:57:16: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[chisel3.util.DecoupledIO[chiselTests.experimental.FlatDecoupledDataView.FizzBuzz],chiselTests.experimental.FlatDecoupledDataView.FlatDecoupled]) [quickfixable]
+[warn]   implicit val view2 = view.invert(_ => new FlatDecoupled)
+[warn]                ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:61:16: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[T,chisel3.util.Valid[T]]) [quickfixable]
+[warn]   implicit def view[T <: Data] = DataView[T, Valid[T]](
+[warn]                ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:73:16: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[chisel3.UInt,chiselTests.experimental.DontCareDataView.Foo]) [quickfixable]
+[warn]   implicit def view = DataView[UInt, Foo](
+[warn]                ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:750:20: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[A,B]) [quickfixable]
+[warn]       implicit val view = DataView[A, B](
+[warn]                    ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataView.scala:824:20: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[BundleA,BundleB]) [quickfixable]
+[warn]       implicit val dv = DataView[BundleA, BundleB](_ => new BundleB, _.foo -> _.fizz, (_, b) => (foo, b.buzz))
+[warn]                    ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/DataViewIntegrationSpec.scala:22:16: Implicit definition should have explicit type (inferred chisel3.experimental.dataview.DataView[chisel3.util.Queue[T],chiselTests.experimental.DataViewIntegrationSpec.QueueIntf[T]]) [quickfixable]
+[warn]   implicit def queueView[T <: Data] = PartialDataView[Queue[T], QueueIntf[T]](
+[warn]                ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/hierarchy/InstantiateSpec.scala:204:22: Implicit definition should have explicit type (inferred Int) [quickfixable]
+[warn]         implicit val n = 3
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/hierarchy/InstantiateSpec.scala:213:22: Implicit definition should have explicit type (inferred Int) [quickfixable]
+[warn]         implicit val n = 3
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/hierarchy/InstantiateSpec.scala:214:22: Implicit definition should have explicit type (inferred String) [quickfixable]
+[warn]         implicit val str = "4"
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/hierarchy/InstantiateSpec.scala:223:22: Implicit definition should have explicit type (inferred Int) [quickfixable]
+[warn]         implicit val n = 5
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/experimental/hierarchy/InstantiateSpec.scala:224:22: Implicit definition should have explicit type (inferred String) [quickfixable]
+[warn]         implicit val str = "6"
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/interface/InterfaceSpec.scala:51:18: Implicit definition should have explicit type (inferred chisel3.interface.ConformsTo[InterfaceSpec.this.BarInterface.type,chiselTests.interface.InterfaceSpec.CompilationUnit1.Bar]{def portMap: Seq[(chiselTests.interface.InterfaceSpec.CompilationUnit1.Bar, InterfaceSpec.this.BarInterface.BarBundle) => (chisel3.Bool, chisel3.Bool)]}) [quickfixable]
+[warn]     implicit val barConformance =
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/interface/InterfaceSpec.scala:80:18: Implicit definition should have explicit type (inferred chisel3.interface.ConformsTo[InterfaceSpec.this.BarInterface.type,chiselTests.interface.InterfaceSpec.CompilationUnit2.Baz]{def portMap: Seq[(chiselTests.interface.InterfaceSpec.CompilationUnit2.Baz, InterfaceSpec.this.BarInterface.BarBundle) => (chisel3.Bool, chisel3.Bool)]}) [quickfixable]
+[warn]     implicit val bazConformance =
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/interface/InterfaceSpec.scala:210:30: Implicit definition should have explicit type (inferred chisel3.interface.ConformsTo[InterfaceWithProperties.type,Bar]) [quickfixable]
+[warn]         private implicit val c = conformance
+[warn]                              ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/interface/ParametricInterfaceSpec.scala:65:18: Implicit definition should have explicit type (inferred chisel3.interface.ConformsTo[ParametricInterfaceSpec.this.Package.BarInterface32.type,chiselTests.interface.ParametricInterfaceSpec.CompilationUnit1.Bar32]{def portMap: Seq[(chiselTests.interface.ParametricInterfaceSpec.CompilationUnit1.Bar32, ParametricInterfaceSpec.this.BarBundle) => (chisel3.UInt, chisel3.UInt)]}) [quickfixable]
+[warn]     implicit val bar32Conformance =
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/chiselTests/interface/TappedInterfaceSpec.scala:78:18: Implicit definition should have explicit type (inferred chisel3.interface.ConformsTo[TappedInterfaceSpec.this.WrapperModuleInterface.type,chiselTests.interface.TappedInterfaceSpec.CompilationUnit1.WrapperModule]{def portMap: Seq[(chiselTests.interface.TappedInterfaceSpec.CompilationUnit1.WrapperModule, TappedInterfaceSpec.this.WrapperModuleInterface.WrapperModuleInterfaceBundle) => (chisel3.Bool, chisel3.Bool)]}) [quickfixable]
+[warn]     implicit val wrapperConformance =
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/circtTests/stage/ChiselStageSpec.scala:101:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo", 3, 10)
+[warn]                  ^
+[warn] /build/source/dependencies/chisel/src/test/scala/circtTests/stage/ChiselStageSpec.scala:106:18: Implicit definition should have explicit type (inferred chisel3.experimental.SourceLine) [quickfixable]
+[warn]     implicit val info = SourceLine("Foo", 3, 10)
+[warn]                  ^
+[warn] 77 deprecations
+[warn] 12 deprecations (since Chisel 6.0)
+[warn] 4 deprecations (since Chisel 7.0.0)
+[warn] 93 deprecations in total; re-run with -deprecation for details
+[warn] 928 feature warnings; re-run with -feature for details
+[warn] 39 warnings found
+[info] done compiling
+[info] compiling 97 Java sources to /build/source/out/foreign-modules/dependencies/chisel/build/circtpanamabinding/compile.dest/classes ...
+[info] /build/source/out/foreign-modules/dependencies/chisel/build/circtpanamabinding/generatedSources.dest/org/llvm/circt/CAPI.java: Some input files use preview features of Java SE 21.
+[info] /build/source/out/foreign-modules/dependencies/chisel/build/circtpanamabinding/generatedSources.dest/org/llvm/circt/CAPI.java: Recompile with -Xlint:preview for details.
+[warn] Error reading API from class file: org.llvm.circt.constants$8 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$8 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirValue : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirValue (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirModule : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirModule (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$51 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$51 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$53 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$53 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$3 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$3 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirIdentifier : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirIdentifier (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.circtFirtoolPopulateExportVerilog$callback : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/circtFirtoolPopulateExportVerilog$callback (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$37 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$37 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$22 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$22 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$9 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$9 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$28 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$28 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$32 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$32 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$45 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$45 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.hwInstanceGraphForEachNode$callback : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/hwInstanceGraphForEachNode$callback (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirOperationState : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirOperationState (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirPass : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirPass (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.OMEvaluatorValue : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/OMEvaluatorValue (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirNamedAttribute : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirNamedAttribute (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$35 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$35 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$14 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$14 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$5 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$5 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$17 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$17 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirPassManager : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirPassManager (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$52 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$52 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$57 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$57 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$61 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$61 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$47 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$47 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$10 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$10 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.CirctFirtoolFirtoolOptions : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/CirctFirtoolFirtoolOptions (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.mlirExportFIRRTL$x0 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/mlirExportFIRRTL$x0 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$60 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$60 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$39 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$39 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$62 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$62 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirDialectHandle : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirDialectHandle (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$38 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$38 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$23 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$23 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$59 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$59 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$50 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$50 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$27 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$27 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.HWInstanceGraphNodeCallback : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/HWInstanceGraphNodeCallback (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$44 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$44 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirStringCallback : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirStringCallback (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$16 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$16 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirLocation : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirLocation (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$2 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$2 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$15 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$15 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$19 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$19 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$55 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$55 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.RuntimeHelper : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/RuntimeHelper (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirStringRef : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirStringRef (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$18 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$18 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$49 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$49 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirRegion : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirRegion (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$34 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$34 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$4 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$4 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.CAPI : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/CAPI (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$20 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$20 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirAttribute : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirAttribute (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.FIRRTLBundleField : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/FIRRTLBundleField (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$46 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$46 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirOpPassManager : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirOpPassManager (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$42 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$42 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirBlock : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirBlock (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.HWInstanceGraphNode : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/HWInstanceGraphNode (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$36 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$36 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$33 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$33 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$6 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$6 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.OMEvaluator : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/OMEvaluator (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$56 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$56 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$13 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$13 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirContext : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirContext (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$1 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$1 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.RuntimeHelper$VarargsInvoker : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/RuntimeHelper$VarargsInvoker (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$40 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$40 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$48 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$48 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirOperation : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirOperation (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$7 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$7 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$25 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$25 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$54 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$54 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$11 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$11 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$24 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$24 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$41 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$41 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.HWInstanceGraph : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/HWInstanceGraph (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$43 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$43 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.FIRRTLClassElement : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/FIRRTLClassElement (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.mlirOperationWriteBytecode$callback : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/mlirOperationWriteBytecode$callback (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$21 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$21 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$30 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$30 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.mlirOperationPrint$callback : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/mlirOperationPrint$callback (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirType : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirType (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$26 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$26 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.MlirLogicalResult : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/MlirLogicalResult (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$29 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$29 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$0 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$0 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$58 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$58 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$12 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$12 (class file version 65.65535). Try running with '--enable-preview'
+[warn] Error reading API from class file: org.llvm.circt.constants$31 : java.lang.UnsupportedClassVersionError: Preview features are not enabled for org/llvm/circt/constants$31 (class file version 65.65535). Try running with '--enable-preview'
+[info] done compiling
+[info] compiling 3 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/panamalib/2.13.15/compile.dest/classes ...
+[warn] 6 feature warnings; re-run with -feature for details
+[warn] one warning found
+[info] done compiling
+[info] compiling 1 Scala source to /build/source/out/foreign-modules/dependencies/chisel/build/panamaom/2.13.15/compile.dest/classes ...
+[warn] 3 deprecations (since 2.13.3); re-run with -deprecation for details
+[warn] one warning found
+[info] done compiling
+[info] compiling 104 Scala sources to /build/source/out/foreign-modules/dependencies/chisel/build/chisel/2.13.15/compile.dest/classes ...
+[warn] 107 deprecations
+[warn] 1 deprecation (since Chisel 5.0)
+[warn] 108 deprecations in total; re-run with -deprecation for details
+[warn] three warnings found
+[info] done compiling
+[info] compiling 3 Scala sources to /build/source/out/panamaconverter/compile.dest/classes ...
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:470:22: non-variable type argument chisel3.Data in type pattern chisel3.Mem[chisel3.Data] is unchecked since it is eliminated by erasure
+[warn]           case mem:  Mem[ChiselData]         => chain :+ referToValue(mem.t)
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:471:22: non-variable type argument chisel3.Data in type pattern chisel3.SyncReadMem[chisel3.Data] is unchecked since it is eliminated by erasure
+[warn]           case smem: SyncReadMem[ChiselData] => chain :+ referToValue(smem.t)
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:1888:33: non-variable type argument chisel3.Data in type pattern chisel3.internal.firrtl.ir.DefMemPort[chisel3.Data] is unchecked since it is eliminated by erasure
+[warn]       case defMemPort:          DefMemPort[ChiselData]       => visitDefMemPort(defMemPort)
+[warn]                                 ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:1891:33: non-variable type argument chisel3.Data in type pattern chisel3.internal.firrtl.ir.DefPrim[chisel3.Data] is unchecked since it is eliminated by erasure
+[warn]       case defPrim:             DefPrim[ChiselData]          => visitDefPrim(defPrim)
+[warn]                                 ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:1896:33: non-variable type argument chisel3.Data in type pattern chisel3.internal.firrtl.ir.DefIntrinsicExpr[chisel3.Data] is unchecked since it is eliminated by erasure
+[warn]       case defIntrinsicExpr:    DefIntrinsicExpr[ChiselData] => visitDefIntrinsicExpr(defIntrinsicExpr)
+[warn]                                 ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:245:26: match may not be exhaustive.
+[warn] It would fail on the following inputs: PrintableParam(_, _), RawParam(_)
+[warn]       val (tpe, value) = parameter match {
+[warn]                          ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:419:24: Exhaustivity analysis reached max recursion depth, not all missing cases are reported.
+[warn] (Please try with scalac -Ypatmat-exhaust-depth 40 or -Ypatmat-exhaust-depth off.)
+[warn]                   data.getRef match {
+[warn]                        ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:492:27: match may not be exhaustive.
+[warn] It would fail on the following inputs: Null(), SubField(_, _), SubIndex(_, _), SubIndexDynamic(_, _)
+[warn]               val value = parent match {
+[warn]                           ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:512:47: match may not be exhaustive.
+[warn] It would fail on the following inputs: BlackBoxIO(_), Null(), SubField(_, _), SubIndex(_, _), SubIndexDynamic(_, _)
+[warn]               val (parentValue, parentType) = parent match {
+[warn]                                               ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:526:47: match may not be exhaustive.
+[warn] It would fail on the following inputs: BlackBoxIO(_), Null(), SubField(_, _), SubIndex(_, _), SubIndexDynamic(_, _)
+[warn]               val (parentValue, parentType) = parent match {
+[warn]                                               ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:488:11: match may not be exhaustive.
+[warn] It would fail on the following input: Null()
+[warn]           ref match {
+[warn]           ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:486:67: match may not be exhaustive.
+[warn] It would fail on the following inputs: BlackBoxIO(_), Null(), SubField(_, _), SubIndex(_, _), SubIndexDynamic(_, _)
+[warn]       refChain.foldLeft(Reference.Null().asInstanceOf[Reference]) {
+[warn]                                                                   ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:1628:33: match may not be exhaustive.
+[warn] It would fail on the following input: PrimOp(_)
+[warn]         val retTypeFn = defPrim.op match {
+[warn]                                 ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:1826:20: match may not be exhaustive.
+[warn] It would fail on the following inputs: Component(), ILit(_), Index(_, _), LitArg(), LitIndex(_, _), ModuleCloneIO(_, _), ModuleIO(_, _), OpaqueSlot(_), ProbeExpr(_), ProbeRead(_), PropExpr(_, _, _, _), PropertyLit(_, _), RWProbeExpr(_), Ref(_), Slot(_, _)
+[warn]         propAssign.exp match {
+[warn]                    ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:85:22: The outer reference in this type test cannot be checked at run time.
+[warn]     final case class One(storage: MlirValue) extends Storage
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:86:22: The outer reference in this type test cannot be checked at run time.
+[warn]     final case class Seq(storage: immutable.Seq[MlirValue]) extends Storage
+[warn]                      ^
+[warn] /build/source/dependencies/chisel/panamaconverter/src/PanamaCIRCTConverter.scala:87:22: The outer reference in this type test cannot be checked at run time.
+[warn]     final case class Map(storage: immutable.Map[String, MlirValue]) extends Storage
+[warn]                      ^
+[warn] 5 deprecations
+[warn] 3 deprecations (since 2.13.3)
+[warn] 8 deprecations in total; re-run with -deprecation for details
+[warn] 2 feature warnings; re-run with -feature for details
+[warn] 21 warnings found
+[info] done compiling
+[info] compiling 4 Scala sources to /build/source/out/hia/compile.dest/classes ...
+[error] /build/source/hia/src/HIA.scala:22:25: not found: type HIACoreParameter
+[error]   val hiacoreParameter: HIACoreParameter = HIACoreParameter(width)
+[error]                         ^
+[error] /build/source/hia/src/HIA.scala:22:44: not found: value HIACoreParameter
+[error]   val hiacoreParameter: HIACoreParameter = HIACoreParameter(width)
+[error]                                            ^
+[error] /build/source/hia/src/HIA.scala:48:26: not found: type ImemPortIO
+[error]   val imem = Flipped(new ImemPortIO(parameter.width))
+[error]                          ^
+[error] /build/source/hia/src/HIA.scala:49:26: not found: type DmemPortIO
+[error]   val dmem = Flipped(new DmemPortIO(parameter.width))
+[error]                          ^
+[error] /build/source/hia/src/HIA.scala:72:30: not found: type HIACore
+[error]   val core = Instantiate(new HIACore(parameter.hiacoreParameter))
+[error]                              ^
+[error] /build/source/hia/src/HIA.scala:99:3: not found: value Assign
+[error]   Assign Probe
+[error]   ^
+[error] /build/source/hia/src/HIA.scala:100:18: not found: type HIAProbe
+[error]   val probeWire: HIAProbe = Wire(new HIAProbe(parameter))
+[error]                  ^
+[error] /build/source/hia/src/HIA.scala:100:38: not found: type HIAProbe
+[error]   val probeWire: HIAProbe = Wire(new HIAProbe(parameter))
+[error]                                      ^
+[error] /build/source/hia/src/HIA.scala:101:13: value probe is not a member of org.chipsalliance.hia.HIAInterface
+[error]   define(io.probe, ProbeValue(probeWire))
+[error]             ^
+[error] /build/source/hia/src/HIA.scala:105:28: not found: type HIAOM
+[error]   val omInstance: Instance[HIAOM] = Instantiate(new HIAOM(parameter))
+[error]                            ^
+[error] 12 errors found
+1 targets failed
+hia.compile Compilation failed
