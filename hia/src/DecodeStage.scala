@@ -22,7 +22,7 @@ class DecodeStage(parameter: DecodeStageParameter)
   val WORD_LEN = 32
   val ADDR_LEN      = 5 // rs1,rs2,wb
   val CSR_ADDR_LEN  = 12
-  val BUBBLE        = 0x00000013.U(.W) 
+  val BUBBLE        = 0x00000013.U(32.W) 
   val EXE_FUN_LEN = 5
   val ALU_NONE    =  0.U(EXE_FUN_LEN.W)
   val ALU_ADD     =  1.U(EXE_FUN_LEN.W)
