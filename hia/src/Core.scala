@@ -13,7 +13,7 @@ object CoreParameter {
 }
 
 case class CoreParameter(xlen: Int) extends SerializableModuleParameter {
-    val ctrlparameter = ControlParameter()
+    val ctrlparameter = ControlParameter(xlen)
     val datapathParameter = DatapathParameter(xlen, ctrlparameter)
 }
 
