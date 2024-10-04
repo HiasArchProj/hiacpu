@@ -28,6 +28,6 @@ object ImmGen {
     )
     val b0     = Mux(sel === IMM_S, inst(7), Mux(sel === IMM_I, inst(20), Mux(sel === IMM_Z, inst(15), 0.U)))
 
-    Cat(sign, b30_20, b19_12, b11, b10_5, b4_1, b0).asSInt
+    Cat(sign, b30_20, b19_12, b11, b10_5, b4_1, b0).asUInt
   }
 }

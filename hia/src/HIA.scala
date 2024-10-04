@@ -63,6 +63,11 @@ class HIA(val parameter: HIAParameter)
   core.io.icache <> cache.io.icache
   core.io.dcache <> cache.io.dcache
 
+  core.io.clock := io.clock
+  core.io.reset := io.reset
+  cache.io.clock := io.clock
+  cache.io.reset := io.reset
+
   val x: UInt = Reg(chiselTypeOf(io.input.bits.x))
   // Block X-state propagation
   val y: UInt = RegInit(chiselTypeOf(io.input.bits.x), 0.U)
