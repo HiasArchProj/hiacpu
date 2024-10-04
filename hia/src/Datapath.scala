@@ -34,6 +34,8 @@ case class DatapathParameter(xlen: Int, ctrl: ControlParameter) extends Serializ
 }
 
 class DatapathInterface(parameter: DatapathParameter) extends Bundle {
+  val clock          = Input(Clock())
+  val reset          = Input(Bool())
   val icache = Flipped(new ICacheIO(parameter.xlen))
   val dcache = Flipped(new DCacheIO(parameter.xlen))
   val ctrl = Flipped(new ControlInterface(parameter.ctrl))
@@ -43,8 +45,12 @@ class DatapathInterface(parameter: DatapathParameter) extends Bundle {
 class Datapath(val parameter: DatapathParameter)
     extends FixedIORawModule(new DatapathInterface(parameter))
     with SerializableModule[DatapathParameter]
-    with Public {
-  // TODO CSRmodule
+    with Public
+    with ImplicitClock
+    with ImplicitReset {
+  override protected def implicitClock: Clock = io.clock
+  override protected def implicitReset: Reset = io.reset  
+
   val xlen = parameter.xlen
   val PC_START = parameter.PC_START
   val PC_EPC = parameter.ctrl.PC_EPC
@@ -71,6 +77,8 @@ class Datapath(val parameter: DatapathParameter)
   val alu = Instantiate(new ALU(parameter.aluParameter))
   val brCond = Instantiate(new BrCond(parameter.brCondParameter))
 
+  csr.io.clock := io.clock
+  csr.io.reset := io.reset
   /** Pipeline State Registers * */
 
   /** *** Fetch / Execute Registers ****
@@ -105,7 +113,7 @@ class Datapath(val parameter: DatapathParameter)
 
   /** **** Fetch ****
     */
-  val started = RegNext(Bool())
+  val started = RegNext(io.reset.asBool)
   val stall = !io.icache.valid || !io.dcache.valid
   val pc = RegInit(PC_START.U(xlen.W) - 4.U(xlen.W))
   // Next Program Counter
@@ -123,9 +131,6 @@ class Datapath(val parameter: DatapathParameter)
     Mux(started || io.ctrl.inst_kill || brCond.io.taken || csr.io.expt, Instructions.NOP, io.icache.data)
   pc := next_pc
   io.icache.addr := next_pc
-  io.icache.data := 0.U
-  io.icache.mask := 0.U
-  io.icache.valid := !stall
 
   // Pipelining
   when(!stall) {
@@ -169,16 +174,16 @@ class Datapath(val parameter: DatapathParameter)
   // D$ access
   val daddr = Mux(stall, ew_reg.alu, alu.io.sum) >> 2.U << 2.U
   val woffset = (alu.io.sum(1) << 4.U).asUInt | (alu.io.sum(0) << 3.U).asUInt
-  io.dcache.valid := !stall && (io.ctrl.st_type.orR || io.ctrl.ld_type.orR)
+  // io.dcache.valid := !stall && (io.ctrl.st_type.orR || io.ctrl.ld_type.orR)
   io.dcache.addr := daddr
-  io.dcache.data := rs2 << woffset
+  io.dcache.wdata := rs2 << woffset
+  io.dcache.wen := !stall && io.ctrl.st_type.orR
   io.dcache.mask := MuxLookup(Mux(stall, st_type, io.ctrl.st_type), "b0000".U)(
     Seq(ST_SW -> "b1111".U, ST_SH -> ("b11".U << alu.io.sum(1, 0)), ST_SB -> ("b1".U << alu.io.sum(1, 0)))
   )
 
   // Pipelining
-  // when(io.reset.asBool || !stall && csr.io.expt) {
-  when(!stall && csr.io.expt) {
+  when(io.reset.asBool || !stall && csr.io.expt) {
     st_type := 0.U
     ld_type := 0.U
     wb_en := false.B

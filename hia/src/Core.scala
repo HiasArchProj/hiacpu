@@ -18,6 +18,8 @@ case class CoreParameter(xlen: Int) extends SerializableModuleParameter {
 }
 
 class CoreInterface(parameter: CoreParameter) extends Bundle {
+    val clock      = Input(Clock())
+    val reset      = Input(Bool())
     val icache = Flipped(new ICacheIO(parameter.xlen))
     val dcache = Flipped(new DCacheIO(parameter.xlen))
 }
@@ -26,11 +28,18 @@ class CoreInterface(parameter: CoreParameter) extends Bundle {
 class Core(val parameter: CoreParameter)
     extends FixedIORawModule(new CoreInterface(parameter))
     with SerializableModule[CoreParameter]
-    with Public {
-    
+    with Public
+    with ImplicitClock
+    with ImplicitReset {
+  override protected def implicitClock: Clock = io.clock
+  override protected def implicitReset: Reset = io.reset 
+
     val dpath = Instantiate(new Datapath(parameter.datapathParameter))
     val ctrl = Instantiate(new Control(parameter.ctrlparameter))
     io.dcache <> dpath.io.dcache
     io.icache <> dpath.io.icache
     ctrl.io <> dpath.io.ctrl
+
+    dpath.io.clock := io.clock
+    dpath.io.reset := io.reset
 }

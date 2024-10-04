@@ -111,6 +111,8 @@ case class CSRParameter(xlen: Int, ctrlParameter: ControlParameter) extends Seri
 class CSRInterface(parameter: CSRParameter) extends Bundle {
   val xlen = parameter.xlen
 
+  val clock          = Input(Clock())
+  val reset          = Input(Bool())
   val stall = Input(Bool())
   val cmd = Input(UInt(3.W))
   val in = Input(UInt(xlen.W))
@@ -132,7 +134,12 @@ class CSRInterface(parameter: CSRParameter) extends Bundle {
 class CSR(val parameter: CSRParameter)
     extends FixedIORawModule(new CSRInterface(parameter))
     with SerializableModule[CSRParameter]
-    with Public {
+    with Public    
+    with ImplicitClock
+    with ImplicitReset {
+  override protected def implicitClock: Clock = io.clock
+  override protected def implicitReset: Reset = io.reset 
+
   val xlen = parameter.xlen
   val PC_EVEC = parameter.PC_EVEC
   val LD_LW = parameter.ctrlParameter.LD_LW
