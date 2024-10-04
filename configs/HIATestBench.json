@@ -7,7 +7,7 @@
         "resetFlipTick": 100
     },
     "hiaParameter": {
-        "width": 16,
+        "width": 32,
         "useAsyncReset": false
     },
     "timeout": 70000,
