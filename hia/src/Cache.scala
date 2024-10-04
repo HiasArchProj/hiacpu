@@ -27,7 +27,7 @@ case class CacheParameter(xlen: Int) extends SerializableModuleParameter {}
 
 class CacheInterface(parameter: CacheParameter) extends Bundle {
     val icache = new ICacheIO(parameter.xlen)
-    val dcache = new ICacheIO(parameter.xlen)
+    val dcache = new DCacheIO(parameter.xlen)
 }
 
 @instantiable
