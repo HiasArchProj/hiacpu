@@ -7,15 +7,21 @@ import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 
 
 class ICacheIO(xlen: Int) extends Bundle {
+    // TODO add valid and ready signal
     val addr = Input(UInt(xlen.W))
     val data = Output(UInt(xlen.W))
+    val valid = Output(Bool())
+    val mask = UInt((xlen / 8).W)
 }
 
 class DCacheIO(xlen: Int) extends  Bundle {
+    // TODO add valid and ready signal
     val addr = Input(UInt(xlen.W))
     val data = Output(UInt(xlen.W))
     val wen = Input(Bool())
     val wdata = Input(UInt(xlen.W))
+    val valid = Output(Bool())
+    val mask = UInt((xlen / 8).W)
 }
 
 object CacheParameter {

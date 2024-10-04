@@ -11,14 +11,6 @@ object ControlParameter {
     implicit def rwP: upickle.default.ReadWriter[ControlParameter] = upickle.default.macroRW[ControlParameter]
 }
 
-object CSR {
-  val N = 0.U(3.W)
-  val W = 1.U(3.W)
-  val S = 2.U(3.W)
-  val C = 3.U(3.W)
-  val P = 4.U(3.W)
-}
-
 case class ControlParameter(xlen: Int) extends SerializableModuleParameter {
   val Y = true.B
   val N = false.B
