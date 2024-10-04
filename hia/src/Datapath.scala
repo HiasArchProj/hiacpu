@@ -23,5 +23,5 @@ class Datapath(val parameter: DatapathParameter)
     extends FixedIORawModule(new DatapathInterface(parameter))
     with SerializableModule[DatapathParameter]
     with Public {
-
+    
 }
