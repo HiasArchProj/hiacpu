@@ -7,13 +7,12 @@ import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 import javax.swing.plaf.nimbus.NimbusLookAndFeel
 import chisel3.experimental.BundleLiterals._
 
-
 class FetchExecutePipelineReg(xlen: Int) extends Bundle {
   val inst = chiselTypeOf(Instructions.NOP)
   val pc = UInt(xlen.W)
 }
 
-class ExecuteWritebackPipelineReg(xlen: Int) extends  Bundle {
+class ExecuteWritebackPipelineReg(xlen: Int) extends Bundle {
   val inst = chiselTypeOf(Instructions.NOP)
   val pc = UInt(xlen.W)
   val alu = UInt(xlen.W)
@@ -34,8 +33,8 @@ case class DatapathParameter(xlen: Int, ctrl: ControlParameter) extends Serializ
 }
 
 class DatapathInterface(parameter: DatapathParameter) extends Bundle {
-  val clock          = Input(Clock())
-  val reset          = Input(Bool())
+  val clock = Input(Clock())
+  val reset = Input(Bool())
   val icache = Flipped(new ICacheIO(parameter.xlen))
   val dcache = Flipped(new DCacheIO(parameter.xlen))
   val ctrl = Flipped(new ControlInterface(parameter.ctrl))
@@ -49,7 +48,7 @@ class Datapath(val parameter: DatapathParameter)
     with ImplicitClock
     with ImplicitReset {
   override protected def implicitClock: Clock = io.clock
-  override protected def implicitReset: Reset = io.reset  
+  override protected def implicitReset: Reset = io.reset
 
   val xlen = parameter.xlen
   val PC_START = parameter.PC_START
@@ -71,7 +70,6 @@ class Datapath(val parameter: DatapathParameter)
   val B_RS2 = parameter.ctrl.B_RS2
   val IMM_Z = parameter.ctrl.IMM_Z
 
-
   val regFile = Module(new RegFile(parameter.xlen))
   val csr = Instantiate(new CSR(parameter.csrParameter))
   val alu = Instantiate(new ALU(parameter.aluParameter))
@@ -79,6 +77,7 @@ class Datapath(val parameter: DatapathParameter)
 
   csr.io.clock := io.clock
   csr.io.reset := io.reset
+
   /** Pipeline State Registers * */
 
   /** *** Fetch / Execute Registers ****
@@ -236,7 +235,7 @@ class Datapath(val parameter: DatapathParameter)
 
   regFile.io.wen := wb_en && !stall && !csr.io.expt
   regFile.io.waddr := wb_rd_addr
-  regFile.io.wdata := regWrite  
+  regFile.io.wdata := regWrite
 
 }
 

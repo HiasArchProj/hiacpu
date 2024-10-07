@@ -58,7 +58,7 @@ class HIA(val parameter: HIAParameter)
   override protected def implicitClock: Clock = io.clock
   override protected def implicitReset: Reset = io.reset
 
-  val core: Instance[Core] = Instantiate(new Core(parameter.coreParameter))
+  val core:  Instance[Core] = Instantiate(new Core(parameter.coreParameter))
   val cache: Instance[Cache] = Instantiate(new Cache(parameter.cacheParameter))
   core.io.icache <> cache.io.icache
   core.io.dcache <> cache.io.dcache

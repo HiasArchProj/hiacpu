@@ -15,10 +15,10 @@ object BrCondParameter {
 case class BrCondParameter(xlen: Int, ctrlParameter: ControlParameter) extends SerializableModuleParameter {}
 
 class BrCondInterface(parameter: BrCondParameter) extends Bundle {
-    val rs1 = Input(UInt(parameter.xlen.W))
-    val rs2 = Input(UInt(parameter.xlen.W))
-    val br_type = Input(UInt(3.W))
-    val taken = Output(Bool())
+  val rs1 = Input(UInt(parameter.xlen.W))
+  val rs2 = Input(UInt(parameter.xlen.W))
+  val br_type = Input(UInt(3.W))
+  val taken = Output(Bool())
 }
 
 @instantiable
@@ -48,4 +48,3 @@ class BrCond(val parameter: BrCondParameter)
       ((io.br_type === BR_LTU) && ltu) ||
       ((io.br_type === BR_GEU) && geu)
 }
-

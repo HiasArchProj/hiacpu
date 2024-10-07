@@ -5,23 +5,22 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 
-
 class ICacheIO(xlen: Int) extends Bundle {
-    // TODO add valid and ready signal
-    val addr = Input(UInt(xlen.W))
-    val data = Output(UInt(xlen.W))
-    val valid = Output(Bool())
-    // val mask = UInt((xlen / 8).W)
+  // TODO add valid and ready signal
+  val addr = Input(UInt(xlen.W))
+  val data = Output(UInt(xlen.W))
+  val valid = Output(Bool())
+  // val mask = UInt((xlen / 8).W)
 }
 
-class DCacheIO(xlen: Int) extends  Bundle {
-    // TODO add valid and ready signal
-    val addr = Input(UInt(xlen.W))
-    val data = Output(UInt(xlen.W))
-    val wen = Input(Bool())
-    val wdata = Input(UInt(xlen.W))
-    val valid = Output(Bool())
-    val mask = Input(UInt((xlen / 8).W))
+class DCacheIO(xlen: Int) extends Bundle {
+  // TODO add valid and ready signal
+  val addr = Input(UInt(xlen.W))
+  val data = Output(UInt(xlen.W))
+  val wen = Input(Bool())
+  val wdata = Input(UInt(xlen.W))
+  val valid = Output(Bool())
+  val mask = Input(UInt((xlen / 8).W))
 }
 
 object CacheParameter {
@@ -32,17 +31,17 @@ object CacheParameter {
 case class CacheParameter(xlen: Int) extends SerializableModuleParameter {}
 
 class CacheInterface(parameter: CacheParameter) extends Bundle {
-    val clock = Input(Clock())
-    val reset = Input(Bool())
-    val icache = new ICacheIO(parameter.xlen)
-    val dcache = new DCacheIO(parameter.xlen)
+  val clock = Input(Clock())
+  val reset = Input(Bool())
+  val icache = new ICacheIO(parameter.xlen)
+  val dcache = new DCacheIO(parameter.xlen)
 }
 
 @instantiable
 class Cache(val parameter: CacheParameter)
     extends FixedIORawModule(new CacheInterface(parameter))
     with SerializableModule[CacheParameter]
-    with Public 
+    with Public
     with ImplicitClock
     with ImplicitReset {
   override protected def implicitClock: Clock = io.clock
