@@ -5,7 +5,6 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 import javax.swing.plaf.nimbus.NimbusLookAndFeel
-import chisel3.experimental.BundleLiterals._
 
 class FetchExecutePipelineReg(xlen: Int) extends Bundle {
   val inst = chiselTypeOf(Instructions.NOP)
@@ -82,23 +81,11 @@ class Datapath(val parameter: DatapathParameter)
 
   /** *** Fetch / Execute Registers ****
     */
-  val fe_reg = RegInit(
-    (new FetchExecutePipelineReg(xlen)).Lit(
-      _.inst -> Instructions.NOP,
-      _.pc -> 0.U
-    )
-  )
+  val fe_reg = RegInit(0.U.asTypeOf(new FetchExecutePipelineReg(xlen)))
 
   /** *** Execute / Write Back Registers ****
     */
-  val ew_reg = RegInit(
-    (new ExecuteWritebackPipelineReg(xlen)).Lit(
-      _.inst -> Instructions.NOP,
-      _.pc -> 0.U,
-      _.alu -> 0.U,
-      _.csr_in -> 0.U
-    )
-  )
+  val ew_reg = RegInit(0.U.asTypeOf(new ExecuteWritebackPipelineReg(xlen)))
 
   /** **** Control signals ****
     */

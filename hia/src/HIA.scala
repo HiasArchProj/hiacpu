@@ -44,6 +44,8 @@ class HIAInterface(parameter: HIAParameter) extends Bundle {
     val y = UInt(parameter.width.W)
   }))
   val output = Valid(UInt(parameter.width.W))
+  val imem = new instructionFetchAXI(parameter.width)
+  val dmem = new loadStoreAXI(parameter.width)
   val probe = Output(Probe(new HIAProbe(parameter), layers.Verification))
   val om = Output(Property[AnyClassType]())
 }
@@ -62,6 +64,8 @@ class HIA(val parameter: HIAParameter)
   val cache: Instance[Cache] = Instantiate(new Cache(parameter.cacheParameter))
   core.io.icache <> cache.io.icache
   core.io.dcache <> cache.io.dcache
+  cache.io.imem <> io.imem
+  cache.io.dmem <> io.dmem
 
   core.io.clock := io.clock
   core.io.reset := io.reset

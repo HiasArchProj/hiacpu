@@ -89,15 +89,6 @@ object CSR {
   )
 }
 
-object Cause {
-  val InstAddrMisaligned = 0x0.U
-  val IllegalInst = 0x2.U
-  val Breakpoint = 0x3.U
-  val LoadAddrMisaligned = 0x4.U
-  val StoreAddrMisaligned = 0x6.U
-  val Ecall = 0x8.U
-}
-
 object CSRParameter {
   implicit def rwP: upickle.default.ReadWriter[CSRParameter] =
     upickle.default.macroRW[CSRParameter]
