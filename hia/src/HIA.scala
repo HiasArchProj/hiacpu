@@ -16,7 +16,10 @@ object HIAParameter {
 }
 
 /** Parameter of [[HIA]] */
-case class HIAParameter(width: Int, useAsyncReset: Boolean) extends SerializableModuleParameter
+case class HIAParameter(width: Int, useAsyncReset: Boolean) extends SerializableModuleParameter {
+  val coreParameter = CoreParameter(width)
+  val cacheParameter = CacheParameter(width)
+}
 
 /** Verification IO of [[HIA]] */
 class HIAProbe(parameter: HIAParameter) extends Bundle {
@@ -54,6 +57,16 @@ class HIA(val parameter: HIAParameter)
     with ImplicitReset {
   override protected def implicitClock: Clock = io.clock
   override protected def implicitReset: Reset = io.reset
+
+  val core:  Instance[Core] = Instantiate(new Core(parameter.coreParameter))
+  val cache: Instance[Cache] = Instantiate(new Cache(parameter.cacheParameter))
+  core.io.icache <> cache.io.icache
+  core.io.dcache <> cache.io.dcache
+
+  core.io.clock := io.clock
+  core.io.reset := io.reset
+  cache.io.clock := io.clock
+  cache.io.reset := io.reset
 
   val x: UInt = Reg(chiselTypeOf(io.input.bits.x))
   // Block X-state propagation
