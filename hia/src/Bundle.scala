@@ -22,25 +22,31 @@ class DCacheIO(xlen: Int) extends Bundle {
   val mask = Input(UInt((xlen / 8).W))
 }
 
+class readReqIO(xlen: Int) extends Bundle {
+  val addr = UInt(xlen.W)
+}
+
+class readRespIO(xlen: Int) extends Bundle {
+  val data = UInt(xlen.W)
+}
+
 class readIO(xlen: Int) extends Bundle {
-  val req = new Bundle {
-    val addr = UInt(xlen.W)
-  }
-  val resp = Flipped(Valid(new Bundle {
-    val data = UInt(xlen.W)
-    // val mask = UInt((xlen / 8).W)
-  }))
+  val req = new readReqIO(xlen)
+  val resp = Flipped(Valid(new readRespIO(xlen)))
+}
+
+class writeReqIO(xlen: Int) extends Bundle {
+  val addr = UInt(xlen.W)
+  val data = UInt(xlen.W)
+}
+
+class writeRespIO(xlen: Int) extends Bundle {
+  val success = Bool()
 }
 
 class writeIO(xlen: Int) extends Bundle {
-  val req = Valid(new Bundle {
-    val addr = UInt(xlen.W)
-    val data = UInt(xlen.W)
-    // val mask = UInt((xlen / 8).W)
-  })
-  val resp = Flipped(new Bundle {
-    val success = Bool()
-  })
+  val req = Valid(new writeReqIO(xlen))
+  val resp = Flipped(new writeRespIO(xlen))
 }
 
 // TODO: refactor to use [[org.chipsalliance.amba.axi4.bundle.AXI4ROIrrevocable]]
