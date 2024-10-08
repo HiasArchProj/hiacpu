@@ -74,20 +74,21 @@ class HIATestBench(val parameter: HIATestBenchParameter)
   when(watchdogCode =/= 0.U) {
     stop(cf"""{"event":"SimulationStop","reason": ${watchdogCode},"cycle":${simulationTime}}\n""")
   }
-  dut.io.imem.r.resp := RawClockedNonVoidFunctionCall("instructionFetchAXI", Valid(new readRespIO(parameter.hiaParameter.width)))(
+  dut.io.imem.r.resp := RawClockedNonVoidFunctionCall("hia_instructionFetchAXI", Valid(new readRespIO(parameter.hiaParameter.width)))(
     dut.io.clock,
     !dut.io.reset.asBool,
-    dut.io.imem.r.req
+    dut.io.imem.r.req.addr
   )
-  dut.io.dmem.r.resp := RawClockedNonVoidFunctionCall("loadStoreAXIR", Valid(new readRespIO(parameter.hiaParameter.width)))(
+  dut.io.dmem.r.resp := RawClockedNonVoidFunctionCall("hia_loadStoreAXIR", Valid(new readRespIO(parameter.hiaParameter.width)))(
     dut.io.clock,
     !dut.io.reset.asBool,
-    dut.io.dmem.r.req
+    dut.io.dmem.r.req.addr
   )
-  dut.io.dmem.w.resp := RawClockedNonVoidFunctionCall("loadStoreAXIW", new writeRespIO(parameter.hiaParameter.width))(
+  dut.io.dmem.w.resp := RawClockedNonVoidFunctionCall("hia_loadStoreAXIW", new writeRespIO(parameter.hiaParameter.width))(
     dut.io.clock,
-    !dut.io.reset.asBool,
-    dut.io.dmem.w.req
+    !dut.io.reset.asBool && dut.io.dmem.w.req.valid,
+    dut.io.dmem.w.req.bits.addr,
+    dut.io.dmem.w.req.bits.data
   )
 }
 
@@ -131,9 +132,7 @@ class TestVerbatimInterface(parameter: TestVerbatimParameter) extends Bundle {
 }
 
 @instantiable
-class TestVerbatim(parameter: TestVerbatimParameter)
-    extends FixedIOExtModule(new TestVerbatimInterface(parameter))
-    with HasExtModuleInline {
+class TestVerbatim(parameter: TestVerbatimParameter) extends FixedIOExtModule(new TestVerbatimInterface(parameter)) with HasExtModuleInline {
   setInline(
     s"$desiredName.sv",
     s"""module $desiredName(output reg clock, output reg reset);

@@ -17,6 +17,8 @@ pub(crate) struct HiaArgs {
   pub wave_path: String,
 
   pub log_level: String,
+
+  pub elf_file: String,
 }
 
 impl HiaArgs {
@@ -44,6 +46,7 @@ impl HiaArgs {
       #[cfg(feature = "trace")]
       wave_path: matcher.match_("wave-path").into(),
       log_level: matcher.try_match("log-level").unwrap_or("info").into(),
+      elf_file: matcher.match_("elf-file").into(),
     }
   }
 }
