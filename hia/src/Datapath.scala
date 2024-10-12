@@ -114,7 +114,7 @@ class Datapath(val parameter: DatapathParameter)
   /** **** Fetch ****
     */
   val started = RegNext(io.reset.asBool)
-  val stall = !io.icache.valid || !io.dcache.valid
+  val stall = !io.icache.valid || !io.dcache.valid // FIXME may be bug
   val pc = RegInit(PC_START.U(xlen.W) - 4.U(xlen.W))
   // Next Program Counter
   val next_pc = MuxCase(
@@ -172,9 +172,10 @@ class Datapath(val parameter: DatapathParameter)
   brCond.io.br_type := io.ctrl.br_type
 
   // D$ access
-  val daddr = Mux(stall, ew_reg.alu, alu.io.sum) >> 2.U << 2.U
+  val daddr = Mux(stall, ew_reg.alu, alu.io.sum) >> 2.U << 2.U // NOTE Why << 2.U >> 2.U
   val woffset = (alu.io.sum(1) << 4.U).asUInt | (alu.io.sum(0) << 3.U).asUInt
   // io.dcache.valid := !stall && (io.ctrl.st_type.orR || io.ctrl.ld_type.orR)
+  // FIXME change mask and valid
   io.dcache.addr := daddr
   io.dcache.wdata := rs2 << woffset
   io.dcache.wen := !stall && io.ctrl.st_type.orR

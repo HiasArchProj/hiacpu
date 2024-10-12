@@ -105,6 +105,8 @@ object CSRParameter {
 
 case class CSRParameter(xlen: Int, ctrlParameter: ControlParameter) extends SerializableModuleParameter {
   // TODO move Object CSR to this
+
+  // TODO move PC_EVEC to reasonable place
   val PC_EVEC = 0x100
 }
 
