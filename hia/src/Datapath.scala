@@ -105,7 +105,7 @@ class Datapath(val parameter: DatapathParameter)
   // Next Program Counter
   val next_pc = MuxCase(
     pc + 4.U,
-    IndexedSeq(
+    Seq(
       stall -> pc,
       csr.io.expt -> csr.io.evec,
       (io.ctrl.pc_sel === PC_EPC) -> csr.io.epc,
