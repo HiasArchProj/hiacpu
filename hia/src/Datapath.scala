@@ -4,7 +4,6 @@ import chisel3._
 import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
-import javax.swing.plaf.nimbus.NimbusLookAndFeel
 
 class FetchExecutePipelineReg(xlen: Int) extends Bundle {
   val inst = chiselTypeOf(Instructions.NOP)
