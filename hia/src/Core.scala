@@ -5,8 +5,6 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 
-// import org.chipsalliance.hia.Cache.{DCacheIO, ICacheIO}
-
 object CoreParameter {
   implicit def rwP: upickle.default.ReadWriter[CoreParameter] =
     upickle.default.macroRW[CoreParameter]

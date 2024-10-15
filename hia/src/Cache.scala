@@ -5,24 +5,6 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 
-class ICacheIO(xlen: Int) extends Bundle {
-  // TODO add valid and ready signal
-  val addr = Input(UInt(xlen.W))
-  val data = Output(UInt(xlen.W))
-  val valid = Output(Bool())
-  // val mask = UInt((xlen / 8).W)
-}
-
-class DCacheIO(xlen: Int) extends Bundle {
-  // TODO add valid and ready signal
-  val addr = Input(UInt(xlen.W))
-  val data = Output(UInt(xlen.W))
-  val wen = Input(Bool())
-  val wdata = Input(UInt(xlen.W))
-  val valid = Output(Bool())
-  val mask = Input(UInt((xlen / 8).W))
-}
-
 object CacheParameter {
   implicit def rwP: upickle.default.ReadWriter[CacheParameter] =
     upickle.default.macroRW[CacheParameter]
@@ -33,8 +15,13 @@ case class CacheParameter(xlen: Int) extends SerializableModuleParameter {}
 class CacheInterface(parameter: CacheParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(Bool())
+  // to cpu
   val icache = new ICacheIO(parameter.xlen)
   val dcache = new DCacheIO(parameter.xlen)
+  // to memory
+  val imem = new instructionFetchAXI(parameter.xlen)
+  val dmem = new loadStoreAXI(parameter.xlen)
+
 }
 
 @instantiable
@@ -47,31 +34,18 @@ class Cache(val parameter: CacheParameter)
   override protected def implicitClock: Clock = io.clock
   override protected def implicitReset: Reset = io.reset
 
-  val xlen = parameter.xlen
+  // icache read memory
+  io.imem.r.req.addr := io.icache.addr
+  io.icache.valid := io.imem.r.resp.valid
+  io.icache.data := io.imem.r.resp.bits.data
+  
+  // dcache read memory
+  io.dmem.r.req.addr := io.dcache.addr
+  io.dcache.valid := io.dmem.r.resp.valid
+  io.dcache.data := io.dmem.r.resp.bits.data
 
-  val mem = Mem(0x4000, UInt(8.W))
-
-  io.icache.valid := true.B
-  io.dcache.valid := true.B
-
-  io.icache.data := Cat(
-    mem(io.icache.addr + 3.U(xlen.W)),
-    mem(io.icache.addr + 2.U(xlen.W)),
-    mem(io.icache.addr + 1.U(xlen.W)),
-    mem(io.icache.addr)
-  )
-
-  io.dcache.data := Cat(
-    mem(io.dcache.addr + 3.U(xlen.W)),
-    mem(io.dcache.addr + 2.U(xlen.W)),
-    mem(io.dcache.addr + 1.U(xlen.W)),
-    mem(io.dcache.addr)
-  )
-
-  when(io.dcache.wen) {
-    mem(io.dcache.addr + 3.U(xlen.W)) := io.dcache.wdata(31, 24)
-    mem(io.dcache.addr + 2.U(xlen.W)) := io.dcache.wdata(23, 16)
-    mem(io.dcache.addr + 1.U(xlen.W)) := io.dcache.wdata(15, 8)
-    mem(io.dcache.addr) := io.dcache.wdata(7, 0)
-  }
+  // dcache write memory
+  io.dmem.w.req.valid := io.dcache.wen
+  io.dmem.w.req.bits.addr := io.dcache.addr
+  io.dmem.w.req.bits.data := io.dcache.wdata
 }

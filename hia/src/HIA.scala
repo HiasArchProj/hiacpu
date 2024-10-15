@@ -21,11 +21,6 @@ case class HIAParameter(width: Int, useAsyncReset: Boolean) extends Serializable
   val cacheParameter = CacheParameter(width)
 }
 
-/** Verification IO of [[HIA]] */
-class HIAProbe(parameter: HIAParameter) extends Bundle {
-  val busy = Bool()
-}
-
 /** Metadata of [[HIA]]. */
 @instantiable
 class HIAOM(parameter: HIAParameter) extends Class {
@@ -39,12 +34,8 @@ class HIAOM(parameter: HIAParameter) extends Class {
 class HIAInterface(parameter: HIAParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(if (parameter.useAsyncReset) AsyncReset() else Bool())
-  val input = Flipped(DecoupledIO(new Bundle {
-    val x = UInt(parameter.width.W)
-    val y = UInt(parameter.width.W)
-  }))
-  val output = Valid(UInt(parameter.width.W))
-  val probe = Output(Probe(new HIAProbe(parameter), layers.Verification))
+  val imem = new instructionFetchAXI(parameter.width)
+  val dmem = new loadStoreAXI(parameter.width)
   val om = Output(Property[AnyClassType]())
 }
 
@@ -62,34 +53,13 @@ class HIA(val parameter: HIAParameter)
   val cache: Instance[Cache] = Instantiate(new Cache(parameter.cacheParameter))
   core.io.icache <> cache.io.icache
   core.io.dcache <> cache.io.dcache
+  cache.io.imem <> io.imem
+  cache.io.dmem <> io.dmem
 
   core.io.clock := io.clock
   core.io.reset := io.reset
   cache.io.clock := io.clock
   cache.io.reset := io.reset
-
-  val x: UInt = Reg(chiselTypeOf(io.input.bits.x))
-  // Block X-state propagation
-  val y: UInt = RegInit(chiselTypeOf(io.input.bits.x), 0.U)
-  val startupFlag = RegInit(false.B)
-  val busy = y =/= 0.U
-
-  when(x > y) { x := x - y }.otherwise { y := y - x }
-
-  when(io.input.fire) {
-    x := io.input.bits.x
-    y := io.input.bits.y
-    startupFlag := true.B
-  }
-
-  io.input.ready := !busy
-  io.output.bits := x
-  io.output.valid := startupFlag && !busy
-
-  // Assign Probe
-  val probeWire: HIAProbe = Wire(new HIAProbe(parameter))
-  define(io.probe, ProbeValue(probeWire))
-  probeWire.busy := busy
 
   // Assign Metadata
   val omInstance: Instance[HIAOM] = Instantiate(new HIAOM(parameter))

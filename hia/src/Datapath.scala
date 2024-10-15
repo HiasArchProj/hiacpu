@@ -5,7 +5,6 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 import javax.swing.plaf.nimbus.NimbusLookAndFeel
-import chisel3.experimental.BundleLiterals._
 
 class FetchExecutePipelineReg(xlen: Int) extends Bundle {
   val inst = chiselTypeOf(Instructions.NOP)
@@ -29,7 +28,7 @@ case class DatapathParameter(xlen: Int, ctrl: ControlParameter) extends Serializ
   val brCondParameter = BrCondParameter(xlen, ctrl)
   val csrParameter = CSRParameter(xlen, ctrl)
 
-  val PC_START = 0x200
+  val PC_START = 0x8000_0000
 }
 
 class DatapathInterface(parameter: DatapathParameter) extends Bundle {
@@ -82,23 +81,11 @@ class Datapath(val parameter: DatapathParameter)
 
   /** *** Fetch / Execute Registers ****
     */
-  val fe_reg = RegInit(
-    (new FetchExecutePipelineReg(xlen)).Lit(
-      _.inst -> Instructions.NOP,
-      _.pc -> 0.U
-    )
-  )
+  val fe_reg = RegInit(0.U.asTypeOf(new FetchExecutePipelineReg(xlen)))
 
   /** *** Execute / Write Back Registers ****
     */
-  val ew_reg = RegInit(
-    (new ExecuteWritebackPipelineReg(xlen)).Lit(
-      _.inst -> Instructions.NOP,
-      _.pc -> 0.U,
-      _.alu -> 0.U,
-      _.csr_in -> 0.U
-    )
-  )
+  val ew_reg = RegInit(0.U.asTypeOf(new ExecuteWritebackPipelineReg(xlen)))
 
   /** **** Control signals ****
     */
@@ -114,11 +101,11 @@ class Datapath(val parameter: DatapathParameter)
     */
   val started = RegNext(io.reset.asBool)
   val stall = !io.icache.valid || !io.dcache.valid
-  val pc = RegInit(PC_START.U(xlen.W) - 4.U(xlen.W))
+  val pc = RegInit((PC_START - 4).U(xlen.W))
   // Next Program Counter
   val next_pc = MuxCase(
     pc + 4.U,
-    IndexedSeq(
+    Seq(
       stall -> pc,
       csr.io.expt -> csr.io.evec,
       (io.ctrl.pc_sel === PC_EPC) -> csr.io.epc,

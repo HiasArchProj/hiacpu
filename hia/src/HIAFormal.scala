@@ -59,41 +59,41 @@ class HIAFormal(val parameter: HIAFormalParameter)
   dut.io.clock := implicitClock
   dut.io.reset := implicitReset
 
-  // LTL Checker
-  import Sequence._
-  val inputFire:     Sequence = dut.io.input.fire
-  val inputNotFire:  Sequence = !dut.io.input.fire
-  val outputFire:    Sequence = dut.io.output.valid
-  val outputNotFire: Sequence = !dut.io.output.valid
-  val inputNotValid: Sequence = dut.io.input.ready && !dut.io.input.valid
+  // // LTL Checker
+  // import Sequence._
+  // val inputFire:     Sequence = dut.io.input.fire
+  // val inputNotFire:  Sequence = !dut.io.input.fire
+  // val outputFire:    Sequence = dut.io.output.valid
+  // val outputNotFire: Sequence = !dut.io.output.valid
+  // val inputNotValid: Sequence = dut.io.input.ready && !dut.io.input.valid
 
-  dut.io.input.bits := io.input.bits
-  dut.io.input.valid := io.input.valid
+  // dut.io.input.bits := io.input.bits
+  // dut.io.input.valid := io.input.valid
 
-  AssumeProperty(
-    inputNotValid |=> not(inputFire),
-    label = Some("HIA_ASSUMPTION_INPUT_NOT_VALID")
-  )
-  AssumeProperty(
-    dut.io.input.bits.x === 4.U && dut.io.input.bits.y === 6.U,
-    label = Some("HIA_ASSUMPTION_INPUT_4_6")
-  )
+  // AssumeProperty(
+  //   inputNotValid |=> not(inputFire),
+  //   label = Some("HIA_ASSUMPTION_INPUT_NOT_VALID")
+  // )
+  // AssumeProperty(
+  //   dut.io.input.bits.x === 4.U && dut.io.input.bits.y === 6.U,
+  //   label = Some("HIA_ASSUMPTION_INPUT_4_6")
+  // )
 
-  AssertProperty(
-    inputFire |=> inputNotFire.repeatAtLeast(1) ### outputFire,
-    label = Some("HIA_ALWAYS_RESPONSE")
-  )
-  AssertProperty(
-    inputFire |-> not(inputNotFire.repeatAtLeast(1) ### (outputNotFire.and(inputFire))),
-    label = Some("HIA_NO_DOUBLE_FIRE")
-  )
-  AssertProperty(
-    outputFire |-> dut.io.output.bits === 2.U,
-    label = Some("HIA_RESULT_IS_CORRECT")
-  )
+  // AssertProperty(
+  //   inputFire |=> inputNotFire.repeatAtLeast(1) ### outputFire,
+  //   label = Some("HIA_ALWAYS_RESPONSE")
+  // )
+  // AssertProperty(
+  //   inputFire |-> not(inputNotFire.repeatAtLeast(1) ### (outputNotFire.and(inputFire))),
+  //   label = Some("HIA_NO_DOUBLE_FIRE")
+  // )
+  // AssertProperty(
+  //   outputFire |-> dut.io.output.bits === 2.U,
+  //   label = Some("HIA_RESULT_IS_CORRECT")
+  // )
 
-  CoverProperty(
-    inputNotValid,
-    label = Some("HIA_COVER_BACK_PRESSURE")
-  )
+  // CoverProperty(
+  //   inputNotValid,
+  //   label = Some("HIA_COVER_BACK_PRESSURE")
+  // )
 }

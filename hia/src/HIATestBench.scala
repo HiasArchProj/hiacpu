@@ -74,56 +74,24 @@ class HIATestBench(val parameter: HIATestBenchParameter)
   when(watchdogCode =/= 0.U) {
     stop(cf"""{"event":"SimulationStop","reason": ${watchdogCode},"cycle":${simulationTime}}\n""")
   }
-  class TestPayload extends Bundle {
-    val x = UInt(parameter.hiaParameter.width.W)
-    val y = UInt(parameter.hiaParameter.width.W)
-    val result = UInt(parameter.hiaParameter.width.W)
-  }
-  val request =
-    RawClockedNonVoidFunctionCall("hia_input", Valid(new TestPayload))(
-      dut.io.clock,
-      !dut.io.reset.asBool && dut.io.input.ready
-    )
-  when(dut.io.input.ready) {
-    dut.io.input.valid := request.valid
-    dut.io.input.bits := request.bits
-  }.otherwise {
-    dut.io.input.valid := false.B;
-    dut.io.input.bits := DontCare;
-  }
-
-  // LTL Checker
-  import Sequence._
-  val inputFire:         Sequence = dut.io.input.fire
-  val inputNotFire:      Sequence = !dut.io.input.fire
-  val outputFire:        Sequence = dut.io.output.valid
-  val outputNotFire:     Sequence = !dut.io.output.valid
-  val lastRequestResult: UInt = RegEnable(request.bits.result, dut.io.input.fire)
-  val checkRight:        Sequence = lastRequestResult === dut.io.output.bits
-  val inputNotValid:     Sequence = dut.io.input.ready && !dut.io.input.valid
-
-  AssertProperty(
-    inputFire |=> inputNotFire.repeatAtLeast(1) ### outputFire,
-    label = Some("HIA_ALWAYS_RESPONSE")
+  dut.io.imem.r.resp := RawClockedNonVoidFunctionCall("hia_instructionFetchAXI", Valid(new readRespIO(parameter.hiaParameter.width)))(
+    dut.io.clock,
+    !dut.io.reset.asBool,
+    dut.io.imem.r.req.addr
   )
-  AssertProperty(
-    inputFire |=> not(inputNotFire.repeatAtLeast(1) ### (outputNotFire.and(inputFire))),
-    label = Some("HIA_NO_DOUBLE_FIRE")
+  dut.io.dmem.r.resp := RawClockedNonVoidFunctionCall("hia_loadStoreAXIR", Valid(new readRespIO(parameter.hiaParameter.width)))(
+    dut.io.clock,
+    !dut.io.reset.asBool,
+    dut.io.dmem.r.req.addr
   )
-  AssertProperty(
-    outputFire |-> checkRight,
-    label = Some("HIA_ASSERT_RESULT_CHECK")
-  )
-  // TODO: need generate $rose function in SVA
-  // CoverProperty(
-  //   rose(outputFire).nonConsecutiveRepeat(parameter.testSize - 1),
-  //   label = Some("HIA_COVER_FIRE")
-  // )
-  CoverProperty(
-    inputNotValid,
-    label = Some("HIA_COVER_BACK_PRESSURE")
+  dut.io.dmem.w.resp := RawClockedNonVoidFunctionCall("hia_loadStoreAXIW", new writeRespIO(parameter.hiaParameter.width))(
+    dut.io.clock,
+    !dut.io.reset.asBool && dut.io.dmem.w.req.valid,
+    dut.io.dmem.w.req.bits.addr,
+    dut.io.dmem.w.req.bits.data
   )
 }
+
 object TestVerbatimParameter {
   implicit def rwP: upickle.default.ReadWriter[TestVerbatimParameter] =
     upickle.default.macroRW
@@ -164,9 +132,7 @@ class TestVerbatimInterface(parameter: TestVerbatimParameter) extends Bundle {
 }
 
 @instantiable
-class TestVerbatim(parameter: TestVerbatimParameter)
-    extends FixedIOExtModule(new TestVerbatimInterface(parameter))
-    with HasExtModuleInline {
+class TestVerbatim(parameter: TestVerbatimParameter) extends FixedIOExtModule(new TestVerbatimInterface(parameter)) with HasExtModuleInline {
   setInline(
     s"$desiredName.sv",
     s"""module $desiredName(output reg clock, output reg reset);

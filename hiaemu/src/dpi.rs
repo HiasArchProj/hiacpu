@@ -1,11 +1,10 @@
-use std::cmp::max;
-use std::ffi::{c_char, CString};
+use core::fmt;
+use std::ffi::{c_char, c_longlong, CString};
 use std::sync::Mutex;
 
 use crate::drive::Driver;
 use crate::plusarg::PlusArgMatcher;
 use crate::HiaArgs;
-use num_bigint::BigUint;
 use svdpi::sys::dpi::{svBitVecVal, svLogic};
 use svdpi::SvScope;
 
@@ -17,45 +16,38 @@ pub type SvBitVecVal = u32;
 
 static DPI_TARGET: Mutex<Option<Box<Driver>>> = Mutex::new(None);
 
-#[derive(Debug)]
-pub(crate) struct TestPayloadBits {
-  pub(crate) x: BigUint,
-  pub(crate) y: BigUint,
-  pub(crate) result: BigUint,
+pub(crate) trait TestPayload {
+  fn to_be_bytes(&self) -> Vec<u8>;
 }
+
 #[derive(Debug)]
-pub(crate) struct TestPayload {
+pub(crate) struct AXIReadPayload {
   pub(crate) valid: svLogic,
-  pub(crate) bits: TestPayloadBits,
+  pub(crate) bits: SvBitVecVal,
 }
 
-unsafe fn write_to_pointer(dst: *mut u8, data: &[u8]) {
-  let dst = std::slice::from_raw_parts_mut(dst, data.len());
+impl TestPayload for AXIReadPayload {
+  fn to_be_bytes(&self) -> Vec<u8> {
+    (self.bits.to_be_bytes().iter()).chain(vec![self.valid].iter()).cloned().collect::<Vec<u8>>()
+  }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub(crate) struct AXIWritePayload {
+  pub(crate) success: svLogic,
+}
+
+impl TestPayload for AXIWritePayload {
+  fn to_be_bytes(&self) -> Vec<u8> {
+    vec![self.success]
+  }
+}
+
+unsafe fn fill_test_payload<T: TestPayload>(dst: *mut SvBitVecVal, payload: &T) {
+  let data: &[u8] = &payload.to_be_bytes();
+  let dst = std::slice::from_raw_parts_mut(dst as *mut u8, data.len());
   dst.copy_from_slice(data);
-}
-
-unsafe fn fill_test_payload(dst: *mut SvBitVecVal, data_width: u64, payload: &TestPayload) {
-  let biguint_to_vec = |x: &BigUint| -> Vec<u8> {
-    let mut x_bytes = x.to_bytes_le();
-    x_bytes.resize((data_width as f64 / 8f64).ceil() as usize, 0);
-    x_bytes
-  };
-
-  assert!(
-    max(
-      max(payload.bits.x.bits(), payload.bits.y.bits()),
-      payload.bits.result.bits()
-    ) <= data_width
-  );
-
-  // The field in the struct is the most significant first
-  let data = (biguint_to_vec(&payload.bits.result).iter())
-    .chain(biguint_to_vec(&payload.bits.y).iter())
-    .chain(biguint_to_vec(&payload.bits.x).iter())
-    .chain(vec![payload.valid].iter())
-    .cloned()
-    .collect::<Vec<u8>>();
-  write_to_pointer(dst as *mut u8, &data);
 }
 
 //----------------------
@@ -88,10 +80,26 @@ unsafe extern "C" fn hia_watchdog(reason: *mut c_char) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn hia_input(payload: *mut svBitVecVal) {
+unsafe extern "C" fn hia_instructionFetchAXI(addr: c_longlong, payload: *mut svBitVecVal) {
   let mut driver = DPI_TARGET.lock().unwrap();
   if let Some(driver) = driver.as_mut() {
-    fill_test_payload(payload, driver.data_width, &driver.get_input());
+    fill_test_payload(payload, &driver.instruction_fetch_axi(addr as u32));
+  }
+}
+
+#[no_mangle]
+unsafe extern "C" fn hia_loadStoreAXIR(addr: c_longlong, payload: *mut svBitVecVal) {
+  let mut driver = DPI_TARGET.lock().unwrap();
+  if let Some(driver) = driver.as_mut() {
+    fill_test_payload(payload, &driver.load_store_axi_r(addr as u32));
+  }
+}
+
+#[no_mangle]
+unsafe extern "C" fn hia_loadStoreAXIW(addr: c_longlong, data: c_longlong, payload: *mut svBitVecVal) {
+  let mut driver = DPI_TARGET.lock().unwrap();
+  if let Some(driver) = driver.as_mut() {
+    fill_test_payload(payload, &driver.load_store_axi_w(addr as u32, data as u32));
   }
 }
 
