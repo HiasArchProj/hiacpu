@@ -8,7 +8,7 @@ import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 import org.chipsalliance.hia.Instructions._
 
 object ControlParameter {
-    implicit def rwP: upickle.default.ReadWriter[ControlParameter] = upickle.default.macroRW[ControlParameter]
+  implicit def rwP: upickle.default.ReadWriter[ControlParameter] = upickle.default.macroRW[ControlParameter]
 }
 
 case class ControlParameter(xlen: Int) extends SerializableModuleParameter {
@@ -163,11 +163,11 @@ class ControlInterface(parameter: ControlParameter) extends Bundle {
 }
 
 @instantiable
-class Control(val parameter: ControlParameter) 
+class Control(val parameter: ControlParameter)
     extends FixedIORawModule(new ControlInterface(parameter))
-    with  SerializableModule[ControlParameter] 
+    with SerializableModule[ControlParameter]
     with Public {
-      
+
   val ctrlSignals = ListLookup(io.inst, parameter.default, parameter.map)
 
   // Control signals for Fetch

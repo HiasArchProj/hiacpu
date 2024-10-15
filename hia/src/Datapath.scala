@@ -5,15 +5,13 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 import javax.swing.plaf.nimbus.NimbusLookAndFeel
-import chisel3.experimental.BundleLiterals._
-
 
 class FetchExecutePipelineReg(xlen: Int) extends Bundle {
   val inst = chiselTypeOf(Instructions.NOP)
   val pc = UInt(xlen.W)
 }
 
-class ExecuteWritebackPipelineReg(xlen: Int) extends  Bundle {
+class ExecuteWritebackPipelineReg(xlen: Int) extends Bundle {
   val inst = chiselTypeOf(Instructions.NOP)
   val pc = UInt(xlen.W)
   val alu = UInt(xlen.W)
@@ -30,12 +28,12 @@ case class DatapathParameter(xlen: Int, ctrl: ControlParameter) extends Serializ
   val brCondParameter = BrCondParameter(xlen, ctrl)
   val csrParameter = CSRParameter(xlen, ctrl)
 
-  val PC_START = 0x200
+  val PC_START = 0x8000_0000
 }
 
 class DatapathInterface(parameter: DatapathParameter) extends Bundle {
-  val clock          = Input(Clock())
-  val reset          = Input(Bool())
+  val clock = Input(Clock())
+  val reset = Input(Bool())
   val icache = Flipped(new ICacheIO(parameter.xlen))
   val dcache = Flipped(new DCacheIO(parameter.xlen))
   val ctrl = Flipped(new ControlInterface(parameter.ctrl))
@@ -49,7 +47,7 @@ class Datapath(val parameter: DatapathParameter)
     with ImplicitClock
     with ImplicitReset {
   override protected def implicitClock: Clock = io.clock
-  override protected def implicitReset: Reset = io.reset  
+  override protected def implicitReset: Reset = io.reset
 
   val xlen = parameter.xlen
   val PC_START = parameter.PC_START
@@ -71,7 +69,6 @@ class Datapath(val parameter: DatapathParameter)
   val B_RS2 = parameter.ctrl.B_RS2
   val IMM_Z = parameter.ctrl.IMM_Z
 
-
   val regFile = Module(new RegFile(parameter.xlen))
   val csr = Instantiate(new CSR(parameter.csrParameter))
   val alu = Instantiate(new ALU(parameter.aluParameter))
@@ -83,23 +80,11 @@ class Datapath(val parameter: DatapathParameter)
 
   /** *** Fetch / Execute Registers ****
     */
-  val fe_reg = RegInit(
-    (new FetchExecutePipelineReg(xlen)).Lit(
-      _.inst -> Instructions.NOP,
-      _.pc -> 0.U
-    )
-  )
+  val fe_reg = RegInit(0.U.asTypeOf(new FetchExecutePipelineReg(xlen)))
 
   /** *** Execute / Write Back Registers ****
     */
-  val ew_reg = RegInit(
-    (new ExecuteWritebackPipelineReg(xlen)).Lit(
-      _.inst -> Instructions.NOP,
-      _.pc -> 0.U,
-      _.alu -> 0.U,
-      _.csr_in -> 0.U
-    )
-  )
+  val ew_reg = RegInit(0.U.asTypeOf(new ExecuteWritebackPipelineReg(xlen)))
 
   /** **** Control signals ****
     */
@@ -114,12 +99,12 @@ class Datapath(val parameter: DatapathParameter)
   /** **** Fetch ****
     */
   val started = RegNext(io.reset.asBool)
-  val stall = !io.icache.valid || !io.dcache.valid // FIXME may be bug
-  val pc = RegInit(PC_START.U(xlen.W) - 4.U(xlen.W))
+  val stall = !io.icache.valid || !io.dcache.valid
+  val pc = RegInit((PC_START - 4).U(xlen.W))
   // Next Program Counter
   val next_pc = MuxCase(
     pc + 4.U,
-    IndexedSeq(
+    Seq(
       stall -> pc,
       csr.io.expt -> csr.io.evec,
       (io.ctrl.pc_sel === PC_EPC) -> csr.io.epc,
@@ -172,10 +157,9 @@ class Datapath(val parameter: DatapathParameter)
   brCond.io.br_type := io.ctrl.br_type
 
   // D$ access
-  val daddr = Mux(stall, ew_reg.alu, alu.io.sum) >> 2.U << 2.U // NOTE Why << 2.U >> 2.U
+  val daddr = Mux(stall, ew_reg.alu, alu.io.sum) >> 2.U << 2.U
   val woffset = (alu.io.sum(1) << 4.U).asUInt | (alu.io.sum(0) << 3.U).asUInt
   // io.dcache.valid := !stall && (io.ctrl.st_type.orR || io.ctrl.ld_type.orR)
-  // FIXME change mask and valid
   io.dcache.addr := daddr
   io.dcache.wdata := rs2 << woffset
   io.dcache.wen := !stall && io.ctrl.st_type.orR
@@ -237,7 +221,7 @@ class Datapath(val parameter: DatapathParameter)
 
   regFile.io.wen := wb_en && !stall && !csr.io.expt
   regFile.io.waddr := wb_rd_addr
-  regFile.io.wdata := regWrite  
+  regFile.io.wdata := regWrite
 
 }
 

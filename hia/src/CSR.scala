@@ -89,15 +89,6 @@ object CSR {
   )
 }
 
-object Cause {
-  val InstAddrMisaligned = 0x0.U
-  val IllegalInst = 0x2.U
-  val Breakpoint = 0x3.U
-  val LoadAddrMisaligned = 0x4.U
-  val StoreAddrMisaligned = 0x6.U
-  val Ecall = 0x8.U
-}
-
 object CSRParameter {
   implicit def rwP: upickle.default.ReadWriter[CSRParameter] =
     upickle.default.macroRW[CSRParameter]
@@ -105,16 +96,14 @@ object CSRParameter {
 
 case class CSRParameter(xlen: Int, ctrlParameter: ControlParameter) extends SerializableModuleParameter {
   // TODO move Object CSR to this
-
-  // TODO move PC_EVEC to reasonable place
   val PC_EVEC = 0x100
 }
 
 class CSRInterface(parameter: CSRParameter) extends Bundle {
   val xlen = parameter.xlen
 
-  val clock          = Input(Clock())
-  val reset          = Input(Bool())
+  val clock = Input(Clock())
+  val reset = Input(Bool())
   val stall = Input(Bool())
   val cmd = Input(UInt(3.W))
   val in = Input(UInt(xlen.W))
@@ -136,11 +125,11 @@ class CSRInterface(parameter: CSRParameter) extends Bundle {
 class CSR(val parameter: CSRParameter)
     extends FixedIORawModule(new CSRInterface(parameter))
     with SerializableModule[CSRParameter]
-    with Public    
+    with Public
     with ImplicitClock
     with ImplicitReset {
   override protected def implicitClock: Clock = io.clock
-  override protected def implicitReset: Reset = io.reset 
+  override protected def implicitReset: Reset = io.reset
 
   val xlen = parameter.xlen
   val PC_EVEC = parameter.PC_EVEC
@@ -350,4 +339,8 @@ class CSR(val parameter: CSRParameter)
         .elsewhen(csr_addr === CSR.instrethw) { instreth := wdata }
     }
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 79b6443af002f175ba1442bdc7398c57da08c63a

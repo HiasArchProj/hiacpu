@@ -8,3 +8,5 @@ target/
 .envrc
 .direnv
 .bsp/
+
+jgproject/
