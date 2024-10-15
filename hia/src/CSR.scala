@@ -339,8 +339,4 @@ class CSR(val parameter: CSRParameter)
         .elsewhen(csr_addr === CSR.instrethw) { instreth := wdata }
     }
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 79b6443af002f175ba1442bdc7398c57da08c63a

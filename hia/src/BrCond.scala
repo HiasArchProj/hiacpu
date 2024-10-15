@@ -48,7 +48,3 @@ class BrCond(val parameter: BrCondParameter)
       ((io.br_type === BR_LTU) && ltu) ||
       ((io.br_type === BR_GEU) && geu)
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 79b6443af002f175ba1442bdc7398c57da08c63a
