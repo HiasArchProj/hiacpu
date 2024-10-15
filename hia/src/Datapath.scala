@@ -28,7 +28,7 @@ case class DatapathParameter(xlen: Int, ctrl: ControlParameter) extends Serializ
   val brCondParameter = BrCondParameter(xlen, ctrl)
   val csrParameter = CSRParameter(xlen, ctrl)
 
-  val PC_START = 0x200
+  val PC_START = 0x8000_0000
 }
 
 class DatapathInterface(parameter: DatapathParameter) extends Bundle {
@@ -101,7 +101,7 @@ class Datapath(val parameter: DatapathParameter)
     */
   val started = RegNext(io.reset.asBool)
   val stall = !io.icache.valid || !io.dcache.valid
-  val pc = RegInit(PC_START.U(xlen.W) - 4.U(xlen.W))
+  val pc = RegInit((PC_START - 4).U(xlen.W))
   // Next Program Counter
   val next_pc = MuxCase(
     pc + 4.U,
