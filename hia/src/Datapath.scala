@@ -95,8 +95,7 @@ class Datapath(val parameter: DatapathParameter)
       (io.ctrl.pc_sel === ctrl.PC_0) -> pc
     )
   )
-  val inst =
-    Mux(started || io.ctrl.inst_kill || brCond.io.taken || csr.io.expt, Instructions.NOP, io.icache.data)
+  val inst = Mux(started || io.ctrl.inst_kill || brCond.io.taken || csr.io.expt, Instructions.NOP, io.icache.data)
   pc := next_pc
   io.icache.addr := next_pc
 
