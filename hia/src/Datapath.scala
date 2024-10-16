@@ -91,7 +91,7 @@ class Datapath(val parameter: DatapathParameter)
       stall -> pc,
       csr.io.expt -> csr.io.evec,
       (io.ctrl.pc_sel === ctrl.PC_EPC) -> csr.io.epc,
-      ((io.ctrl.pc_sel === ctrl.PC_ALU) || (brCond.io.taken)) -> (alu.io.sum >> 1.U << 1.U),
+      ((io.ctrl.pc_sel === ctrl.PC_ALU) || (brCond.io.taken)) -> Cat(alu.io.sum(xlen - 1, 1), 0.U(1.W)),
       (io.ctrl.pc_sel === ctrl.PC_0) -> pc
     )
   )
@@ -140,8 +140,8 @@ class Datapath(val parameter: DatapathParameter)
   brCond.io.br_type := io.ctrl.br_type
 
   // D$ access
-  val daddr = Mux(stall, ew_reg.alu, alu.io.sum) >> 2.U << 2.U
-  val woffset = (alu.io.sum(1) << 4.U).asUInt | (alu.io.sum(0) << 3.U).asUInt
+  val daddr = Cat(Mux(stall, ew_reg.alu, alu.io.sum)(xlen - 1, 2), 0.U(2.W))
+  val woffset = Cat(alu.io.sum(1), alu.io.sum(0), 0.U(2.W))
   // io.dcache.valid := !stall && (io.ctrl.st_type.orR || io.ctrl.ld_type.orR)
   io.dcache.addr := daddr
   io.dcache.wdata := rs2 << woffset
@@ -177,7 +177,7 @@ class Datapath(val parameter: DatapathParameter)
   }
 
   // Load
-  val loffset = (ew_reg.alu(1) << 4.U).asUInt | (ew_reg.alu(0) << 3.U).asUInt
+  val loffset = Cat(ew_reg.alu(1), ew_reg.alu(0), 0.U(2.W))
   val lshift = io.dcache.data >> loffset
   val load = MuxLookup(ld_type, io.dcache.data.zext)(
     Seq(
