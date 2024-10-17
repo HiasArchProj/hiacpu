@@ -283,7 +283,7 @@ class CSR(val parameter: CSRParameter)
 
   when(!io.stall) {
     when(io.expt) {
-      mepc := io.pc >> 2 << 2
+      mepc := Cat(io.pc(xlen - 1, 2), 0.U(2.W))
       mcause := Mux(
         iaddrInvalid,
         Cause.InstAddrMisaligned,
@@ -326,7 +326,7 @@ class CSR(val parameter: CSRParameter)
         .elsewhen(csr_addr === CSR.mtimeh) { timeh := wdata }
         .elsewhen(csr_addr === CSR.mtimecmp) { mtimecmp := wdata }
         .elsewhen(csr_addr === CSR.mscratch) { mscratch := wdata }
-        .elsewhen(csr_addr === CSR.mepc) { mepc := wdata >> 2.U << 2.U }
+        .elsewhen(csr_addr === CSR.mepc) { mepc := Cat(wdata(xlen - 1, 2), 0.U(2.W)) }
         .elsewhen(csr_addr === CSR.mcause) { mcause := wdata & (BigInt(1) << (xlen - 1) | 0xf).U }
         .elsewhen(csr_addr === CSR.mbadaddr) { mbadaddr := wdata }
         .elsewhen(csr_addr === CSR.mtohost) { mtohost := wdata }
