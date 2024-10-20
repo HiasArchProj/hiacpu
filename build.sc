@@ -10,12 +10,13 @@ import mill.scalalib.TestModule.Utest
 import mill.util.Jvm
 import coursier.maven.MavenRepository
 import $file.dependencies.chisel.build
+import $file.dependencies.rvdecoderdb.common
 import $file.common
 
 object deps {
   val scalaVer = "2.13.15"
   val mainargs = ivy"com.lihaoyi::mainargs:0.5.0"
-  val oslib = ivy"com.lihaoyi::os-lib:0.9.1"
+  val oslib = ivy"com.lihaoyi::os-lib:0.10.0"
   val upickle = ivy"com.lihaoyi::upickle:3.3.1"
 }
 
@@ -26,14 +27,26 @@ trait Chisel extends millbuild.dependencies.chisel.build.Chisel {
   override def millSourcePath = os.pwd / "dependencies" / "chisel"
 }
 
+object rvdecoderdb extends RVDecoderDB
+
+trait RVDecoderDB extends millbuild.dependencies.rvdecoderdb.common.RVDecoderDBJVMModule with ScalaModule {
+  def scalaVersion            = T(deps.scalaVer)
+  def osLibIvy                = deps.oslib
+  def upickleIvy              = deps.upickle
+  override def millSourcePath = os.pwd / "dependencies" / "rvdecoderdb" / "rvdecoderdb"
+}
+
 object hia extends HIA
-trait HIA extends millbuild.common.HasChisel with ScalafmtModule {
+trait HIA extends millbuild.common.HasChisel with millbuild.common.HasRVDecoderDB with  ScalafmtModule {
   def scalaVersion = T(deps.scalaVer)
 
   def chiselModule = Some(chisel)
   def chiselPluginJar = T(Some(chisel.pluginModule.jar()))
   def chiselIvy = None
   def chiselPluginIvy = None
+
+  def rvdecoderdbModule = rvdecoderdb
+  def riscvOpcodesPath  = T.input(PathRef(os.pwd / "dependencies" / "riscv-opcodes"))
 }
 
 object elaborator extends Elaborator
