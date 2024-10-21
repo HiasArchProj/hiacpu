@@ -33,8 +33,76 @@ object DecoderParameter {
 }
 
 case class DecoderParameter() extends SerializableModuleParameter {
+  // imm_sel
+  val IMM_SEL_LEN = 3
+  val IMM_S = 0
+  val IMM_SB = 1
+  val IMM_U = 2
+  val IMM_UJ = 3
+  val IMM_I = 4
+  val IMM_Z = 5
+
+  // pc_sel
+  val PC_SEL_LEN = 2
+  val PC_4 = 0
+  val PC_ALU = 1
+  val PC_0 = 2
+
+  // selAlu1
+  val ALU1_SEL_LEN = 2
+  val ALU1_PC = 0
+  val ALU1_RS1 = 1
+  val ALU1_ZERO = 2
+
+  // selAlu2
+  val ALU2_SEL_LEN = 2
+  val ALU2_IMM = 0
+  val ALU2_RS2 = 1
+  val ALU2_ZERO = 2
+
+  // br_type
+  val BR_TYPE_LEN = 3
+  val BR_LTU = 0
+  val BR_LT = 1
+  val BR_EQ = 2
+  val BR_GEU = 3
+  val BR_GE = 4
+  val BR_NE = 5
+
+  // st_type
+  val ST_TYPE_LEN = 2
+  val ST_SW = 0
+  val ST_SH = 1
+  val ST_SB = 2
+
+  // ld_type
+  val LD_TYPE_LEN = 3
+  val LD_LW = 0
+  val LD_LH = 1
+  val LD_LB = 2
+  val LD_LHU = 3
+  val LD_LBU = 4
+
+  // wb_sel
+  val WB_SEL_LEN = 2
+  val WB_ALU = 0
+  val WB_MEM = 1
+  val WB_PC4 = 2
+
+  val ALUFN_LEN = 4
+  val ALU_ADD = 0
+  val ALU_SUB = 1
+  val ALU_AND = 2
+  val ALU_OR = 3
+  val ALU_XOR = 4
+  val ALU_SLT = 5
+  val ALU_SLL = 6
+  val ALU_SLTU = 7
+  val ALU_SRL = 8
+  val ALU_SRA = 9
+
   private val instructionTable = org.chipsalliance.rvdecoderdb.instructions(org.chipsalliance.rvdecoderdb.extractResource(getClass.getClassLoader))
-  private val targetSets = Set("rv_i", "rv32_i")
+  private val targetSets = Set("rv_i", "rv_zicsr", "rv_zifencei", "rv_system") // TODO add more instructionSets
   private val instructionDecodePattern = instructionTable
     .filter(instr => targetSets.contains(instr.instructionSet.name))
     .filter(_.pseudoFrom.isEmpty)
@@ -49,22 +117,22 @@ case class DecoderParameter() extends SerializableModuleParameter {
   )
 
   object UOPIMM extends UOP {
-    def width = 3
+    def width = IMM_SEL_LEN
 
-    def s: BitPat = encode(0)
+    def s: BitPat = encode(IMM_S)
 
-    def sb: BitPat = encode(1)
+    def sb: BitPat = encode(IMM_SB)
 
-    def u: BitPat = encode(2)
+    def u: BitPat = encode(IMM_U)
 
-    def uj: BitPat = encode(3)
+    def uj: BitPat = encode(IMM_UJ)
 
-    def i: BitPat = encode(4)
+    def i: BitPat = encode(IMM_I)
 
-    def z: BitPat = encode(5)
+    def z: BitPat = encode(IMM_Z)
   }
 
-  object immType extends  UOPDecodeField[HiaDecodePattern] {
+  object immType extends UOPDecodeField[HiaDecodePattern] {
     override def name: String = "imm_type"
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
@@ -83,184 +151,271 @@ case class DecoderParameter() extends SerializableModuleParameter {
   }
 
   object UOPBR extends UOP {
-    def width = 3
+    def width = BR_TYPE_LEN
 
-    def ltu: BitPat = encode(0)
+    def ltu: BitPat = encode(BR_LTU)
 
-    def lt: BitPat = encode(1)
+    def lt: BitPat = encode(BR_LT)
 
-    def eq: BitPat = encode(2)
+    def eq: BitPat = encode(BR_EQ)
 
-    def geu: BitPat = encode(3)
+    def geu: BitPat = encode(BR_GEU)
 
-    def ge: BitPat = encode(4)
+    def ge: BitPat = encode(BR_GE)
 
-    def ne: BitPat = encode(5)
+    def ne: BitPat = encode(BR_NE)
   }
 
-  object brType extends  UOPDecodeField[HiaDecodePattern] {
+  object brType extends UOPDecodeField[HiaDecodePattern] {
     override def name: String = "br_type"
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
       case "bltu" => UOPBR.ltu
-      case "blt" => UOPBR.lt
-      case "beq" => UOPBR.eq
+      case "blt"  => UOPBR.lt
+      case "beq"  => UOPBR.eq
       case "bgeu" => UOPBR.geu
-      case "bge" => UOPBR.ge
-      case "bne" => UOPBR.ne
-      case _ => UOPBR.dontCare
+      case "bge"  => UOPBR.ge
+      case "bne"  => UOPBR.ne
+      case _      => UOPBR.dontCare
     }
 
     override def uopType: UOPBR.type = UOPBR
   }
 
   object UOPA1 extends UOP {
-    def width = 2
+    def width = ALU1_SEL_LEN
 
-    def pc: BitPat = encode(0)
+    def pc: BitPat = encode(ALU1_PC)
 
-    def rs1: BitPat = encode(1)
+    def rs1: BitPat = encode(ALU1_RS1)
 
-    def zero: BitPat = encode(2)
+    def zero: BitPat = encode(ALU1_ZERO)
   }
 
-  object selAlu1 extends  UOPDecodeField[HiaDecodePattern] {
+  object selAlu1 extends UOPDecodeField[HiaDecodePattern] {
     override def name: String = "sel_alu1"
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
       case i if Seq("auipc", "jal", "beq", "bne", "blt", "bge", "bltu", "bgeu").contains(i) => UOPA1.pc
-      case i if Seq("jalr",  "lb", "lh", "lw", "lbu", "lhu", "sb", "sh", "sw", "addi", "slti", "sltiu", "xori", "ori", "andi", "add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and").contains(i) => UOPA1.rs1
+      case i
+          if Seq(
+            "jalr",
+            "lb",
+            "lh",
+            "lw",
+            "lbu",
+            "lhu",
+            "sb",
+            "sh",
+            "sw",
+            "addi",
+            "slti",
+            "sltiu",
+            "xori",
+            "ori",
+            "andi",
+            "add",
+            "sub",
+            "sll",
+            "slt",
+            "sltu",
+            "xor",
+            "srl",
+            "sra",
+            "or",
+            "and"
+          ).contains(i) =>
+        UOPA1.rs1
       case i if Seq("lui").contains(i) => UOPA1.zero
-      case _ => UOPA1.dontCare
+      case _                           => UOPA1.dontCare
     }
     override def uopType: UOPA1.type = UOPA1
   }
 
   object UOPA2 extends UOP {
-    def width = 2
+    def width = ALU2_SEL_LEN
 
-    def imm: BitPat = encode(0)
+    def imm: BitPat = encode(ALU2_IMM)
 
-    def rs2: BitPat = encode(1)
+    def rs2: BitPat = encode(ALU2_RS2)
 
-    def zero: BitPat = encode(2)
+    def zero: BitPat = encode(ALU2_ZERO)
   }
-  object selAlu2 extends  UOPDecodeField[HiaDecodePattern] {
+  object selAlu2 extends UOPDecodeField[HiaDecodePattern] {
     override def name: String = "sel_alu2"
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
-      case i if Seq("lui", "auipc", "jalr", "jal", "beq", "bne", "blt", "bge", "bltu", "bgeu", "lb", "lh", "lw", "lbu", "lhu", "sb", "sh", "sw", "addi", "slti", "sltiu", "xori", "ori", "andi").contains(i) => UOPA2.imm
+      case i
+          if Seq(
+            "lui",
+            "auipc",
+            "jalr",
+            "jal",
+            "beq",
+            "bne",
+            "blt",
+            "bge",
+            "bltu",
+            "bgeu",
+            "lb",
+            "lh",
+            "lw",
+            "lbu",
+            "lhu",
+            "sb",
+            "sh",
+            "sw",
+            "addi",
+            "slti",
+            "sltiu",
+            "xori",
+            "ori",
+            "andi"
+          ).contains(i) =>
+        UOPA2.imm
       case i if Seq("add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and").contains(i) => UOPA2.rs2
-      case _ => UOPA2.dontCare
+      case _                                                                                          => UOPA2.dontCare
     }
     override def uopType: UOPA2.type = UOPA2
   }
 
-
   object UOPALU extends UOP {
-    def width = 4
+    def width = ALUFN_LEN
 
-    def add: BitPat = encode(0)
-    def sub: BitPat = encode(1)
-    def and: BitPat = encode(2)
-    def or: BitPat = encode(3)
-    def xor: BitPat = encode(4)
-    def slt: BitPat = encode(5)
-    def sll: BitPat = encode(6)
-    def sltu: BitPat = encode(7)
-    def srl: BitPat = encode(8)
-    def sra: BitPat = encode(9)
+    def add:  BitPat = encode(ALU_ADD)
+    def sub:  BitPat = encode(ALU_SUB)
+    def and:  BitPat = encode(ALU_AND)
+    def or:   BitPat = encode(ALU_OR)
+    def xor:  BitPat = encode(ALU_XOR)
+    def slt:  BitPat = encode(ALU_SLT)
+    def sll:  BitPat = encode(ALU_SLL)
+    def sltu: BitPat = encode(ALU_SLTU)
+    def srl:  BitPat = encode(ALU_SRL)
+    def sra:  BitPat = encode(ALU_SRA)
   }
 
-  object aluFn extends  UOPDecodeField[HiaDecodePattern] {
+  object aluFn extends UOPDecodeField[HiaDecodePattern] {
     override def name: String = "aluFn"
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
-      case i if Seq("lui", "auipc", "jalr", "jal", "beq", "bne", "blt", "bge", "bltu", "bgeu", "lb", "lh", "lw", "lbu", "lhu", "sb", "sh", "sw", "addi", "add").contains(i) => UOPALU.add
-      case i if Seq("sub").contains(i) => UOPALU.sub
-      case i if Seq("andi", "and").contains(i) => UOPALU.and
-      case i if Seq("ori", "or").contains(i) => UOPALU.or
-      case i if Seq("xori", "xor").contains(i) => UOPALU.xor
-      case i if Seq("slti", "slt").contains(i) => UOPALU.slt
-      case i if Seq("slli", "sll").contains(i) => UOPALU.sll
+      case i
+          if Seq("lui", "auipc", "jalr", "jal", "beq", "bne", "blt", "bge", "bltu", "bgeu", "lb", "lh", "lw", "lbu", "lhu", "sb", "sh", "sw", "addi", "add")
+            .contains(i) =>
+        UOPALU.add
+      case i if Seq("sub").contains(i)           => UOPALU.sub
+      case i if Seq("andi", "and").contains(i)   => UOPALU.and
+      case i if Seq("ori", "or").contains(i)     => UOPALU.or
+      case i if Seq("xori", "xor").contains(i)   => UOPALU.xor
+      case i if Seq("slti", "slt").contains(i)   => UOPALU.slt
+      case i if Seq("slli", "sll").contains(i)   => UOPALU.sll
       case i if Seq("sltiu", "sltu").contains(i) => UOPALU.sltu
-      case i if Seq("srli", "srl").contains(i) => UOPALU.srl
-      case i if Seq("srai", "sra").contains(i) => UOPALU.sra
-      case _ => UOPALU.dontCare
+      case i if Seq("srli", "srl").contains(i)   => UOPALU.srl
+      case i if Seq("srai", "sra").contains(i)   => UOPALU.sra
+      case _                                     => UOPALU.dontCare
     }
 
     override def uopType: UOPALU.type = UOPALU
   }
 
   object UOPST extends UOP {
-    def width = 2
+    def width = ST_TYPE_LEN
 
-    def sw: BitPat = encode(0)
+    def sw: BitPat = encode(ST_SW)
 
-    def sh: BitPat = encode(1)
+    def sh: BitPat = encode(ST_SH)
 
-    def sb: BitPat = encode(2)
+    def sb: BitPat = encode(ST_SB)
   }
 
-  object stType extends  UOPDecodeField[HiaDecodePattern] {
+  object stType extends UOPDecodeField[HiaDecodePattern] {
     override def name: String = "st_type"
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
       case i if Seq("sw").contains(i) => UOPST.sw
       case i if Seq("sh").contains(i) => UOPST.sh
       case i if Seq("sb").contains(i) => UOPST.sb
-      case _ => UOPST.dontCare
+      case _                          => UOPST.dontCare
     }
 
     override def uopType: UOPST.type = UOPST
   }
 
   object UOPLD extends UOP {
-    def width = 3
+    def width = LD_TYPE_LEN
 
-    def lw: BitPat = encode(0)
+    def lw: BitPat = encode(LD_LW)
 
-    def lh: BitPat = encode(1)
+    def lh: BitPat = encode(LD_LH)
 
-    def lb: BitPat = encode(2)
+    def lb: BitPat = encode(LD_LB)
 
-    def lhu: BitPat = encode(3)
+    def lhu: BitPat = encode(LD_LHU)
 
-    def lbu: BitPat = encode(4)
+    def lbu: BitPat = encode(LD_LBU)
   }
-  object ldType extends  UOPDecodeField[HiaDecodePattern] {
+  object ldType extends UOPDecodeField[HiaDecodePattern] {
     override def name: String = "ld_type"
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
-      case i if Seq("lw").contains(i) => UOPLD.lw
-      case i if Seq("lh").contains(i) => UOPLD.lh
-      case i if Seq("lb").contains(i) => UOPLD.lb
+      case i if Seq("lw").contains(i)  => UOPLD.lw
+      case i if Seq("lh").contains(i)  => UOPLD.lh
+      case i if Seq("lb").contains(i)  => UOPLD.lb
       case i if Seq("lhu").contains(i) => UOPLD.lhu
       case i if Seq("lbu").contains(i) => UOPLD.lbu
-      case _ => UOPLD.dontCare
+      case _                           => UOPLD.dontCare
     }
 
     override def uopType: UOPLD.type = UOPLD
   }
 
-    object UOPWB extends UOP {
-    def width = 2
+  object UOPWB extends UOP {
+    def width = WB_SEL_LEN
 
-    def alu: BitPat = encode(0)
+    def alu: BitPat = encode(WB_ALU)
 
-    def mem: BitPat = encode(1)
+    def mem: BitPat = encode(WB_MEM)
 
-    def pc4: BitPat = encode(2)
+    def pc4: BitPat = encode(WB_PC4)
   }
 
-  object selWB extends  UOPDecodeField[HiaDecodePattern] {
+  object selWB extends UOPDecodeField[HiaDecodePattern] {
     override def name: String = "sel_wb"
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
-      case i if Seq("lui", "auipc", "beq", "bne", "blt", "bge", "bltu", "bgeu", "sb", "sh", "sw", "addi", "slti", "sltiu", "xori", "ori", "andi", "add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and").contains(i) => UOPWB.alu
+      case i
+          if Seq(
+            "lui",
+            "auipc",
+            "beq",
+            "bne",
+            "blt",
+            "bge",
+            "bltu",
+            "bgeu",
+            "sb",
+            "sh",
+            "sw",
+            "addi",
+            "slti",
+            "sltiu",
+            "xori",
+            "ori",
+            "andi",
+            "add",
+            "sub",
+            "sll",
+            "slt",
+            "sltu",
+            "xor",
+            "srl",
+            "sra",
+            "or",
+            "and"
+          ).contains(i) =>
+        UOPWB.alu
       case i if Seq("lw", "lh", "lb", "lhu", "lbu").contains(i) => UOPWB.mem
-      case i if Seq("jal", "jalr").contains(i) => UOPWB.pc4
-      case _ => UOPWB.dontCare
+      case i if Seq("jal", "jalr").contains(i)                  => UOPWB.pc4
+      case _                                                    => UOPWB.dontCare
     }
 
     override def uopType: UOPWB.type = UOPWB
