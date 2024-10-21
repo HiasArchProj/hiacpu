@@ -11,6 +11,7 @@ object FetchStageParameter {
 }
 
 case class FetchStageParameter(xlen: Int) extends SerializableModuleParameter {
+  val PC_START = 0x8000_0000
 }
 
 class FetchStageData(xlen: Int) extends Bundle {
@@ -20,6 +21,10 @@ class FetchStageData(xlen: Int) extends Bundle {
 
 class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {
   val out = Decoupled(new FetchStageData(parameter.xlen))
+
+  // TODO add handshaking protocol 
+  val next_pc = Output(UInt(5.W))
+  val inst = Input(UInt(parameter.xlen.W))
 }
 
 
@@ -27,6 +32,9 @@ object ExecuteStageParameter {
   implicit def rwP: upickle.default.ReadWriter[ExecuteStageParameter] =
     upickle.default.macroRW[ExecuteStageParameter]
 }
+
+
+
 
 case class ExecuteStageParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {
   
@@ -45,6 +53,8 @@ class ExecuteStageData(xlen: Int, decoderParameter: DecoderParameter) extends Bu
 
 class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
   val out = Decoupled(new ExecuteStageData(parameter.xlen, parameter.decoderParameter))
+  val raddr1 = Output(UInt(5.W))
+  val rdata1 = Input(UInt(parameter.xlen.W))
 }
 
 
@@ -57,7 +67,18 @@ case class WriteBackStageParameter(xlen: Int, decoderParameter: DecoderParameter
 }
 
 class WriteBackStageInterface(parameter: WriteBackStageParameter) extends Bundle {
-  
+  val raddr2 = Output(UInt(5.W))
+  val rdata2 = Input(UInt(parameter.xlen.W))
+  val rwen = Output(Bool())
+  val rwaddr = Output(UInt(5.W))
+  val rwdata = Input(UInt(parameter.xlen.W))
+
+  // TODO add handshaking protocol 
+  val caddr = Output(UInt(parameter.xlen.W))
+  val crdata = Output(UInt(parameter.xlen.W))
+  val cwdata = Output(UInt(parameter.xlen.W))
+  val cwen = Output(Bool())
+  val cwmask = Output(UInt((parameter.xlen / 8).W))
 }
 
 object CoreParameter {
@@ -99,4 +120,25 @@ class Core(val parameter: CoreParameter)
 
   dpath.io.clock := io.clock
   dpath.io.reset := io.reset
+}
+
+
+class RegFileIO(xlen: Int) extends Bundle {
+  val raddr1 = Input(UInt(5.W))
+  val raddr2 = Input(UInt(5.W))
+  val rdata1 = Output(UInt(xlen.W))
+  val rdata2 = Output(UInt(xlen.W))
+  val wen = Input(Bool())
+  val waddr = Input(UInt(5.W))
+  val wdata = Input(UInt(xlen.W))
+}
+
+class RegFile(xlen: Int) extends Module {
+  val io = IO(new RegFileIO(xlen))
+  val regs = Mem(32, UInt(xlen.W))
+  io.rdata1 := Mux(io.raddr1.orR, regs(io.raddr1), 0.U)
+  io.rdata2 := Mux(io.raddr2.orR, regs(io.raddr2), 0.U)
+  when(io.wen & io.waddr.orR) {
+    regs(io.waddr) := io.wdata
+  }
 }
