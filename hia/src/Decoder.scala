@@ -71,9 +71,10 @@ case class DecoderParameter() extends SerializableModuleParameter {
 
   // st_type
   val ST_TYPE_LEN = 2
-  val ST_SW = 0
-  val ST_SH = 1
-  val ST_SB = 2
+  val ST_NONE = 0
+  val ST_SW = 1
+  val ST_SH = 2
+  val ST_SB = 3
 
   // ld_type
   val LD_TYPE_LEN = 3
@@ -85,9 +86,10 @@ case class DecoderParameter() extends SerializableModuleParameter {
 
   // wb_sel
   val WB_SEL_LEN = 2
-  val WB_ALU = 0
-  val WB_MEM = 1
-  val WB_PC4 = 2
+  val WB_NONE = 0
+  val WB_ALU = 1
+  val WB_MEM = 2
+  val WB_PC4 = 3
 
   val ALUFN_LEN = 4
   val ALU_ADD = 0
@@ -325,6 +327,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
     def sh: BitPat = encode(ST_SH)
 
     def sb: BitPat = encode(ST_SB)
+
+    def none: BitPat = encode(ST_NONE) // be used to get wen
   }
 
   object stType extends UOPDecodeField[HiaDecodePattern] {
@@ -334,7 +338,7 @@ case class DecoderParameter() extends SerializableModuleParameter {
       case i if Seq("sw").contains(i) => UOPST.sw
       case i if Seq("sh").contains(i) => UOPST.sh
       case i if Seq("sb").contains(i) => UOPST.sb
-      case _                          => UOPST.dontCare
+      case _                          => UOPST.none
     }
 
     override def uopType: UOPST.type = UOPST
@@ -376,6 +380,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
     def mem: BitPat = encode(WB_MEM)
 
     def pc4: BitPat = encode(WB_PC4)
+
+    def none: BitPat = encode(WB_NONE) // be used to get wb_en
   }
 
   object selWB extends UOPDecodeField[HiaDecodePattern] {
@@ -415,7 +421,7 @@ case class DecoderParameter() extends SerializableModuleParameter {
         UOPWB.alu
       case i if Seq("lw", "lh", "lb", "lhu", "lbu").contains(i) => UOPWB.mem
       case i if Seq("jal", "jalr").contains(i)                  => UOPWB.pc4
-      case _                                                    => UOPWB.dontCare
+      case _                                                    => UOPWB.none
     }
 
     override def uopType: UOPWB.type = UOPWB
