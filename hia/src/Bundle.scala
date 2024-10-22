@@ -6,20 +6,20 @@ import chisel3.util._
 /* --- Cache interface --- */
 class ICacheIO(xlen: Int) extends Bundle {
   // TODO add valid and ready signal
-  val addr = Input(UInt(xlen.W))
-  val data = Output(UInt(xlen.W))
-  val valid = Output(Bool())
-  // val mask = UInt((xlen / 8).W)
+  val raddr = Input(UInt(xlen.W))
+  val rdata = Output(UInt(xlen.W))
+  val ren = Output(Bool())
 }
 
 class DCacheIO(xlen: Int) extends Bundle {
-  // TODO add valid and ready signal
-  val addr = Input(UInt(xlen.W))
-  val data = Output(UInt(xlen.W))
+  // TODO modify HIATestBench and DPI-C
+  val raddr = Input(UInt(xlen.W))
+  val rdata = Output(UInt(xlen.W))
+  val ren = Output(Bool())
+  val waddr = Input(UInt(xlen.W))
   val wen = Input(Bool())
   val wdata = Input(UInt(xlen.W))
-  val valid = Output(Bool())
-  val mask = Input(UInt((xlen / 8).W))
+  val wmask = Input(UInt((xlen / 8).W)) // implement sb sh sw
 }
 
 class readReqIO(xlen: Int) extends Bundle {
