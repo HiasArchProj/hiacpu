@@ -25,16 +25,56 @@ class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {
   // TODO add handshaking protocol 
   val next_pc = Output(UInt(5.W))
   val inst = Input(UInt(parameter.xlen.W))
+
+  // TODO add decoder signal or interrupt
+  val taken = Input(Bool())
+  val alu_out = Input(UInt(parameter.xlen.W))
 }
+
+@instantiable
+class FetchStage(val parameter: FetchStageParameter)
+    extends FixedIORawModule(new FetchStageInterface(parameter))
+    with SerializableModule[FetchStageParameter]
+    with Public 
+    with ImplicitClock
+    with ImplicitReset {
+  override protected def implicitClock: Clock = io.clock
+  override protected def implicitReset: Reset = io.reset 
+  val xlen = parameter.xlen
+
+  val pc = RegInit((parameter.PC_START-4).U(xlen.W))
+  val next_pc = MuxCase(
+    (pc+4).U,
+    Seq(
+      io.taken -> Cat(io.alu_out(xlen - 1, 1), 0.U(1.W)),
+      ~io.out.ready -> pc
+    )
+  )
+
+  // connect cache and stage reg
+  io.next_pc := next_pc
+  io.out.pc := next_pc
+  io.out.inst := io.inst
+
+  val inst_wait :: inst_ready :: Nil = Enum(2)
+  val inst_state = RegInit(inst_wait)
+  inst_state := MuxCase(
+    inst_wait, 
+    Seq(
+      inst_wait -> inst_ready,
+      inst_ready -> inst_wait
+    )
+  )
+
+  io.out.valid := inst_state // FIXME maybe wrong
+}
+
 
 
 object ExecuteStageParameter {
   implicit def rwP: upickle.default.ReadWriter[ExecuteStageParameter] =
     upickle.default.macroRW[ExecuteStageParameter]
 }
-
-
-
 
 case class ExecuteStageParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {
   
