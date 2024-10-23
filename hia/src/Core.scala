@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
+import os.stat
 
 object FetchStageParameter {
   implicit def rwP: upickle.default.ReadWriter[FetchStageParameter] =
@@ -42,12 +43,13 @@ class FetchStage(val parameter: FetchStageParameter)
   override protected def implicitReset: Reset = io.reset 
   val xlen = parameter.xlen
 
+  val started = RegNext(io.reset.asBool)
   val pc = RegInit((parameter.PC_START-4).U(xlen.W))
   val next_pc = MuxCase(
     (pc+4).U,
     Seq(
       io.taken -> Cat(io.alu_out(xlen - 1, 1), 0.U(1.W)),
-      ~io.out.ready -> pc
+      (state == s_wait_ready) -> pc
     )
   )
 
@@ -56,17 +58,14 @@ class FetchStage(val parameter: FetchStageParameter)
   io.out.pc := next_pc
   io.out.inst := io.inst
 
-  val inst_wait :: inst_ready :: Nil = Enum(2)
-  val inst_state = RegInit(inst_wait)
-  inst_state := MuxCase(
-    inst_wait, 
-    Seq(
-      inst_wait -> inst_ready,
-      inst_ready -> inst_wait
-    )
-  )
+  val s_idle :: s_wait_ready :: Nul = Enum(2)
+  val state = RegInit(s_idle)
+  state := MuxLookup(state, s_idle)(List(
+    s_idle -> Mux(io.out.valid, s_wait_ready, s_idle),
+    s_wait_ready -> Mux(io.out.ready, s_idle, s_wait_ready)
+  ))
 
-  io.out.valid := inst_state // FIXME maybe wrong
+  io.out.valid := true.B // FIXME maybe wrong
 }
 
 
