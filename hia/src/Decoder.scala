@@ -42,12 +42,6 @@ case class DecoderParameter() extends SerializableModuleParameter {
   val IMM_I = 4
   val IMM_Z = 5
 
-  // pc_sel
-  val PC_SEL_LEN = 2
-  val PC_4 = 0
-  val PC_ALU = 1
-  val PC_0 = 2
-
   // selAlu1
   val ALU1_SEL_LEN = 2
   val ALU1_PC = 0
