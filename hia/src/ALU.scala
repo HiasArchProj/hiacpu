@@ -35,16 +35,16 @@ class ALU(val parameter: ALUParameter)
     extends FixedIORawModule(new ALUInterface(parameter))
     with SerializableModule[ALUParameter]
     with Public {
-  val ALU_ADD = parameter.ALU_ADD
-  val ALU_SUB = parameter.ALU_SUB
-  val ALU_AND = parameter.ALU_AND
-  val ALU_OR = parameter.ALU_OR
-  val ALU_XOR = parameter.ALU_XOR
-  val ALU_SLT = parameter.ALU_SLT
-  val ALU_SLL = parameter.ALU_SLL
-  val ALU_SLTU = parameter.ALU_SLTU
-  val ALU_SRL = parameter.ALU_SRL
-  val ALU_SRA = parameter.ALU_SRA
+  val ALU_ADD = parameter.ALU_ADD.U
+  val ALU_SUB = parameter.ALU_SUB.U
+  val ALU_AND = parameter.ALU_AND.U
+  val ALU_OR = parameter.ALU_OR.U
+  val ALU_XOR = parameter.ALU_XOR.U
+  val ALU_SLT = parameter.ALU_SLT.U
+  val ALU_SLL = parameter.ALU_SLL.U
+  val ALU_SLTU = parameter.ALU_SLTU.U
+  val ALU_SRL = parameter.ALU_SRL.U
+  val ALU_SRA = parameter.ALU_SRA.U
 
   val shamt = io.B(4, 0).asUInt
 

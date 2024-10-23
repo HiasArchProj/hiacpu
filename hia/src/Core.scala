@@ -39,10 +39,9 @@ class FetchStage(val parameter: FetchStageParameter)
     with Public {
   val xlen = parameter.xlen
 
-  val started = RegNext(io.reset.asBool)
   val pc = RegInit((parameter.PC_START-4).U(xlen.W))
   val next_pc = MuxCase(
-    (pc+4).U,
+    (pc+4.U),
     Seq(
       io.taken -> Cat(io.alu_out(xlen - 1, 1), 0.U(1.W)),
       (state === s_wait_ready) -> pc
@@ -51,10 +50,10 @@ class FetchStage(val parameter: FetchStageParameter)
 
   // connect cache and stage reg
   io.next_pc := next_pc
-  io.out.pc := next_pc
-  io.out.inst := io.inst
+  io.out.bits.pc := next_pc
+  io.out.bits.inst := io.inst
 
-  val s_idle :: s_wait_ready :: Nul = Enum(2)
+  val s_idle :: s_wait_ready :: Nil = Enum(2)
   val state = RegInit(s_idle)
   state := MuxLookup(state, s_idle)(Seq(
     s_idle -> Mux(io.out.valid, s_wait_ready, s_idle),
@@ -73,6 +72,7 @@ object ExecuteStageParameter {
 
 case class ExecuteStageParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {
   val aluParameter = ALUParameter(xlen, decoderParameter)
+  val brCondParameter = BrCondParameter(xlen, decoderParameter)
 }
 
 class ExecuteStageData(xlen: Int, decoderParameter: DecoderParameter) extends Bundle {
@@ -83,7 +83,7 @@ class ExecuteStageData(xlen: Int, decoderParameter: DecoderParameter) extends Bu
 
   val ld_type = Output(UInt(decoderParameter.LD_TYPE_LEN.W))
   val st_type = Output(UInt(decoderParameter.ST_TYPE_LEN.W))
-  val wb_type = Output(UInt(decoderParameter.WB_SEL_LEN.W))
+  val wb_sel = Output(UInt(decoderParameter.WB_SEL_LEN.W))
 }
 
 class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
@@ -97,7 +97,7 @@ class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
   val alu_out = Output(UInt(parameter.xlen.W))
 
   // bypass signal
-  val wb_sel = Input(UInt(parameter.decoderParameter.WB_SEL_LEN))
+  val wb_sel = Input(UInt(parameter.decoderParameter.WB_SEL_LEN.W))
   val wb_en = Input(Bool())
   val wb_rd_addr = Input(UInt(5.W))
   val wb_data = Input(UInt(parameter.xlen.W))
@@ -114,66 +114,66 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
   val pc = io.in.bits.pc
 
   val decoder: Instance[Decoder] = Instantiate(new Decoder(parameter.decoderParameter))
-  val decodeOutput: DecodeBundle = Wire(chiselTypeOf(decoder.io.output))
+  val decodeOutput = Wire(chiselTypeOf(decoder.io.output))
   val alu: Instance[ALU] = Instantiate(new ALU(parameter.aluParameter))
 
-  val imm_out = ImmGen(decodeOutput.imm_sel, inst)
+  val imm_out = ImmGen(decodeOutput(parameter.decoderParameter.immType), inst)
 
   // read reg
   io.raddr1 := inst(19, 15)
   io.raddr2 := inst(24, 20)
 
   // bypass
-  val rs1hazard = io.wb_en && rs1_addr.orR && (io.raddr1 === io.wb_rd_addr)
-  val rs2hazard = io.wb_en && rs2_addr.orR && (io.raddr2 === io.wb_rd_addr)
-  val rs1 = Mux(io.wb_sel === parameter.decoderParameter.WB_ALU && rs1hazard, wb_data, io.rdata1)
-  val rs2 = Mux(io.wb_sel === parameter.decoderParameter.WB_ALU && rs2hazard, wb_data, io.rdata2)
+  val rs1hazard = io.wb_en && io.raddr1.orR && (io.raddr1 === io.wb_rd_addr)
+  val rs2hazard = io.wb_en && io.raddr2.orR && (io.raddr2 === io.wb_rd_addr)
+  val rs1 = Mux(io.wb_sel === parameter.decoderParameter.WB_ALU.U && rs1hazard, io.wb_data, io.rdata1)
+  val rs2 = Mux(io.wb_sel === parameter.decoderParameter.WB_ALU.U && rs2hazard, io.wb_data, io.rdata2)
 
   // ALU 
-  alu.io.alu_op := decoderParameter.aluFn
-  alu.io.A := MuxLookup(decodeOutput.sel_alu1, io.rdata1)(
+  alu.io.alu_op := decodeOutput(parameter.decoderParameter.aluFn)
+  alu.io.A := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu1), io.rdata1)(
     Seq(
-      decoderParameter.ALU1_PC -> pc
-      decoderParameter.ALU1_RS1 -> io.rdata1
-      decoderParameter.ALU1_ZERO -> 0.U(xlen.W)
+      parameter.decoderParameter.ALU1_PC.U -> pc,
+      parameter.decoderParameter.ALU1_RS1.U -> io.rdata1,
+      parameter.decoderParameter.ALU1_ZERO.U -> 0.U(xlen.W)
     )
   )
-  alu.io.B := MuxLookup(decodeOutput.sel_alu2, io.rdata2)(
+  alu.io.B := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu2), io.rdata2)(
     Seq(
-      decoderParameter.ALU2_PC -> pc
-      decoderParameter.ALU2_RS1 -> io.rdata2
-      decoderParameter.ALU2_ZERO -> 0.U(xlen.W)
+      parameter.decoderParameter.ALU2_IMM.U -> imm_out,
+      parameter.decoderParameter.ALU2_RS2.U -> io.rdata2,
+      parameter.decoderParameter.ALU2_ZERO.U -> 0.U(xlen.W)
     )
   )
 
   // Branch condition 
-  val brCond: Instance[BrCond] = Instantiate(new BrCond(xlen, decoderParameter))
+  val brCond: Instance[BrCond] = Instantiate(new BrCond(parameter.brCondParameter))
   brCond.io.rs1 := rs1
   brCond.io.rs2 := rs2
-  brCond.io.br_type := decodeOutput.brType
+  brCond.io.br_type := decodeOutput(parameter.decoderParameter.brType)
 
   // connect stage reg
   io.out.bits.inst := inst
   io.out.bits.pc := pc
   io.out.bits.alu_out := alu.io.out
   io.out.bits.st_data := rs2
-  io.out.bits.ld_type := decodeOutput.ldType 
-  io.out.bits.st_type := decodeOutput.stType
-  io.out.bits.wb_type := decodeOutput.selWB
+  io.out.bits.ld_type := decodeOutput(parameter.decoderParameter.ldType) 
+  io.out.bits.st_type := decodeOutput(parameter.decoderParameter.stType)
+  io.out.bits.wb_sel := decodeOutput(parameter.decoderParameter.selWB)
 
   // handshake protocol
-  val s_idle :: s_wait_ready :: s_wait_valid :: s_working = Enum(4)
+  val s_idle :: s_wait_ready :: s_wait_valid :: s_working :: Nil= Enum(4)
   val state = RegInit(s_idle)
   state := MuxLookup(state, s_idle)(
     Seq(
-      s_idle -> MuxLookup((io.in.valid, io.out.ready), s_idle)(Seq(
-                  (true.B, false.B) -> s_wait_ready,
-                  (false.B, true.B) -> s_wait_valid,
-                  (true.B, true.B) -> s_working
+      s_idle -> MuxLookup(Cat(io.in.valid, io.out.ready), s_idle)(Seq(
+                  "b10".U -> s_wait_ready,
+                  "b01".U -> s_wait_valid,
+                  "b11".U -> s_working
                )),
       s_wait_ready -> Mux(io.out.ready, s_working, s_wait_ready),
       s_wait_valid -> Mux(io.in.valid, s_working, s_wait_valid),
-      s_working => MuxCase(s_working, Seq(
+      s_working -> MuxCase(s_working, Seq(
                      ~io.out.ready -> s_wait_ready,
                      ~io.in.valid-> s_wait_valid,
                      (~io.in.valid && ~io.out.ready) -> s_idle
@@ -181,12 +181,16 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
     )
   )
 
-  val (io.in.ready, io.out.valid) = MuxLookup(state, (false.B, false.B))(Seq(
-    s_idle -> (true.B, false.B),
-    s_wait_ready -> (false.B, true.B),
-    s_wait_valid -> (true.B, false.B),
-    s_working -> (true.B, true.B)
+   // FIXME check grammar correct?
+  val out_list = ListLookup(state, List(false.B, false.B), Array(
+    BitPat(s_idle) -> List(true.B, false.B),
+    BitPat(s_wait_ready) -> List(false.B, true.B),
+    BitPat(s_wait_valid) -> List(true.B, false.B),
+    BitPat(s_working) -> List(true.B, true.B)
   ))
+
+  io.in.ready := out_list(0) 
+  io.out.valid := out_list(1) 
 }
 
 object WriteBackStageParameter {
@@ -198,16 +202,68 @@ case class WriteBackStageParameter(xlen: Int, decoderParameter: DecoderParameter
 }
 
 class WriteBackStageInterface(parameter: WriteBackStageParameter) extends Bundle {
-  val rwen = Output(Bool())
-  val rwaddr = Output(UInt(5.W))
-  val rwdata = Input(UInt(parameter.xlen.W))
+  val in = Flipped(Decoupled(new ExecuteStageData(parameter.xlen, parameter.decoderParameter)))
 
-  // TODO add handshaking protocol 
-  val caddr = Output(UInt(parameter.xlen.W))
-  val crdata = Output(UInt(parameter.xlen.W))
-  val cwdata = Output(UInt(parameter.xlen.W))
-  val cwen = Output(Bool())
-  val cwmask = Output(UInt((parameter.xlen / 8).W))
+  val gpr = new RegFileIO(parameter.xlen)
+  val dcache = new DCacheIO(parameter.xlen)
+
+  // bypass signal
+  val wb_sel = Output(UInt(parameter.decoderParameter.WB_SEL_LEN.W))
+  val wb_en = Output(Bool())
+  val wb_rd_addr = Output(UInt(5.W))
+  val wb_data = Output(UInt(parameter.xlen.W))
+}
+
+@instantiable
+class WriteBackStage(val parameter: WriteBackStageParameter)
+    extends FixedIORawModule(new WriteBackStageInterface(parameter))
+    with SerializableModule[WriteBackStageParameter]
+    with Public {
+  val xlen = parameter.xlen
+  
+  val inst = io.in.bits.inst
+  val pc = io.in.bits.pc
+  val rd = inst(11, 7)
+
+   // dcache connnect
+  io.dcache.raddr := io.in.bits.alu_out
+  io.dcache.ren := ~io.dcache.wen
+  val rdata = io.dcache.rdata
+  io.dcache.waddr := io.in.bits.alu_out
+  io.dcache.wen := (io.in.bits.st_type =/= parameter.decoderParameter.ST_NONE.U)
+  io.dcache.wdata := io.in.bits.st_data
+  io.dcache.wmask := MuxLookup(io.in.bits.st_type, "b0000".U)( // TODO use args replace magic number 4, or select 4/8
+    Seq(
+      parameter.decoderParameter.ST_SW.U -> "b1111".U(4.W),
+      parameter.decoderParameter.ST_SH.U -> "b11".U(4.W),
+      parameter.decoderParameter.ST_SB.U -> "b1".U(4.W) 
+    )
+  )
+
+  // gpr connnect
+  val loffset = Cat(io.in.bits.alu_out(1), io.in.bits.alu_out(0), 0.U(2.W))
+  val lshift = rdata >> loffset
+  val load = MuxLookup(io.in.bits.ld_type, rdata.zext)(
+    Seq(
+      parameter.decoderParameter.LD_LH.U -> lshift(15, 0).asSInt,
+      parameter.decoderParameter.LD_LB.U -> lshift(7, 0).asSInt,
+      parameter.decoderParameter.LD_LHU.U -> lshift(15, 0).zext,
+      parameter.decoderParameter.LD_LBU.U -> lshift(7, 0).zext
+    )
+  )
+  val gprWrite = MuxLookup(io.in.bits.wb_sel, io.in.bits.alu_out.zext)(
+    Seq(
+      parameter.decoderParameter.WB_MEM.U -> load,
+      parameter.decoderParameter.WB_ALU.U -> io.in.bits.alu_out.zext,
+      parameter.decoderParameter.WB_PC4.U -> (pc + 4.U).zext
+    )
+  ).asUInt
+  io.gpr.waddr := rd
+  io.gpr.wdata := gprWrite
+  io.gpr.wen := (io.in.bits.wb_sel =/= parameter.decoderParameter.WB_NONE.U)
+
+  // handshake procotol
+  
 }
 
 object CoreParameter {

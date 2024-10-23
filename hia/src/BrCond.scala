@@ -10,7 +10,7 @@ object BrCondParameter {
     upickle.default.macroRW[BrCondParameter]
 }
 
-case class BrCondParameter(xlen: Int, decoderParameter: decoderParameter) extends SerializableModuleParameter {}
+case class BrCondParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {}
 
 class BrCondInterface(parameter: BrCondParameter) extends Bundle {
   val rs1 = Input(UInt(parameter.xlen.W))
@@ -24,12 +24,12 @@ class BrCond(val parameter: BrCondParameter)
     extends FixedIORawModule(new BrCondInterface(parameter))
     with SerializableModule[BrCondParameter]
     with Public {
-  val BR_LTU = parameter.decoderParameter.BR_LTU
-  val BR_LT = parameter.decoderParameter.BR_LT
-  val BR_EQ = parameter.decoderParameter.BR_EQ
-  val BR_GEU = parameter.decoderParameter.BR_GEU
-  val BR_GE = parameter.decoderParameter.BR_GE
-  val BR_NE = parameter.decoderParameter.BR_NE
+  val BR_LTU = parameter.decoderParameter.BR_LTU.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_LT = parameter.decoderParameter.BR_LT.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_EQ = parameter.decoderParameter.BR_EQ.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_GEU = parameter.decoderParameter.BR_GEU.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_GE = parameter.decoderParameter.BR_GE.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_NE = parameter.decoderParameter.BR_NE.U(parameter.decoderParameter.BR_TYPE_LEN.W)
 
   val eq = io.rs1 === io.rs2
   val neq = !eq
