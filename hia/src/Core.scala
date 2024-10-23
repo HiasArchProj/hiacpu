@@ -204,7 +204,9 @@ case class WriteBackStageParameter(xlen: Int, decoderParameter: DecoderParameter
 class WriteBackStageInterface(parameter: WriteBackStageParameter) extends Bundle {
   val in = Flipped(Decoupled(new ExecuteStageData(parameter.xlen, parameter.decoderParameter)))
 
-  val gpr = new RegFileIO(parameter.xlen)
+  val waddr = Output(UInt(parameter.xlen.W))
+  val wdata = Input(UInt(parameter.xlen.W))
+  val wen = Output(Bool())
   val dcache = new DCacheIO(parameter.xlen)
 
   // bypass signal
@@ -258,11 +260,11 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
       parameter.decoderParameter.WB_PC4.U -> (pc + 4.U).zext
     )
   ).asUInt
-  io.gpr.waddr := rd
-  io.gpr.wdata := gprWrite
-  io.gpr.wen := (io.in.bits.wb_sel =/= parameter.decoderParameter.WB_NONE.U)
+  io.waddr := rd
+  io.wdata := gprWrite
+  io.wen := (io.in.bits.wb_sel =/= parameter.decoderParameter.WB_NONE.U)
 
-  // handshake procotol
+  // TODO handshake procotol
   
 }
 
@@ -297,14 +299,30 @@ class Core(val parameter: CoreParameter)
   override protected def implicitClock: Clock = io.clock
   override protected def implicitReset: Reset = io.reset
 
-  val dpath = Instantiate(new Datapath(parameter.datapathParameter))
-  val ctrl = Instantiate(new Control(parameter.ctrlparameter))
-  io.dcache <> dpath.io.dcache
-  io.icache <> dpath.io.icache
-  ctrl.io <> dpath.io.ctrl
+  val xlen = parameter.xlen
+  val fetchStage = Instantiate(new FetchStage(parameter.fetchstageParameter))
+  val executeStage = Instantiate(new ExecuteStage(parameter.executestageParameter))
+  val writebackStage = Instantiate(new WriteBackStage(parameter.writebackstageParameter))
+  val gpr = Module(new RegFile(xlen))
 
-  dpath.io.clock := io.clock
-  dpath.io.reset := io.reset
+  val fe_regs = Reg(new FetchStageData(xlen))
+  val ew_regs = Reg(new ExecuteStageData(xlen, parameter.decoderParameter))
+
+  // FIXME connect may be wrong
+  fetchStage.io.out <> fe_regs
+  fetchStage.io.inst := io.icache.rdata
+  io.icache.raddr := fetchStage.io.next_pc
+  fetchStage.io.taken := executeStage.io.taken
+  fetchStage.io.alu_out := executeStage.io.alu_out
+
+  executeStage.io.in <> fe_regs
+  executeStage.io.out <> ew_regs
+  executeStage.io <> gpr.io
+  executeStage.io <> writebackStage.io
+
+  writebackStage.io.in <> ew_regs
+  writebackStage.io.dcache <> io.dcache
+  writebackStage.io <> gpr.io
 }
 
 
