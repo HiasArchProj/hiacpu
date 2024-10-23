@@ -28,7 +28,6 @@ class ALUInterface(parameter: ALUParameter) extends Bundle {
   val B = Input(UInt(parameter.xlen.W))
   val alu_op = Input(UInt(4.W))
   val out = Output(UInt(parameter.xlen.W))
-  val sum = Output(UInt(parameter.xlen.W))
 }
 
 @instantiable
