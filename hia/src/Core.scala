@@ -232,7 +232,9 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
   io.dcache.ren := ~io.dcache.wen
   val rdata = io.dcache.rdata
   io.dcache.waddr := io.in.bits.alu_out
-  io.dcache.wen := (io.in.bits.st_type =/= parameter.decoderParameter.ST_NONE.U)
+  val dcache_wen = io.in.bits.st_type =/= parameter.decoderParameter.ST_NONE.U
+  val dcahce_ren =  io.in.bits.st_type =/= parameter.decoderParameter.LD_NONE.U
+  io.dcache.wen := dcache_wen
   io.dcache.wdata := io.in.bits.st_data
   io.dcache.wmask := MuxLookup(io.in.bits.st_type, "b0000".U)( // TODO use args replace magic number 4, or select 4/8
     Seq(
@@ -262,10 +264,24 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
   ).asUInt
   io.waddr := rd
   io.wdata := gprWrite
-  io.wen := (io.in.bits.wb_sel =/= parameter.decoderParameter.WB_NONE.U)
+  val gpr_wen = io.in.bits.wb_sel =/= parameter.decoderParameter.WB_NONE.U
+  io.wen := gpr_wen
 
   // TODO handshake procotol
-  
+  val s_idle :: s_load :: s_store :: s_writeback :: Nil  = Enum(4)
+  val state = RegInit(s_idle)
+  state := MuxLookup(state, s_idle)(Seq(
+    s_idle -> Mux(io.in.valid, MuxCase(state, s_writeback, Seq(dcache_wen->s_load, dcahce_ren->s_load)), s_idle),
+    s_load -> s_writeback,
+    s_store -> Mux(io.in.valid, MuxCase(state, s_writeback, Seq(dcache_wen->s_load, dcahce_ren->s_load)), s_idle),
+    s_writeback -> Mux(io.in.valid, MuxCase(state, s_writeback, Seq(dcache_wen->s_load, dcahce_ren->s_load)), s_idle),
+  ))
+  io.in.ready := MuxLookup(state, true.B)(Seq(
+    s_idle -> true.B,
+    s_load -> false.B,
+    s_store -> true.B,
+    s_writeback -> true.B
+  ))
 }
 
 object CoreParameter {
