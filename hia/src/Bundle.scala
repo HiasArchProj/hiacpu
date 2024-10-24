@@ -8,7 +8,7 @@ class ICacheIO(xlen: Int) extends Bundle {
   // TODO add valid and ready signal
   val raddr = Input(UInt(xlen.W))
   val rdata = Output(UInt(xlen.W))
-  val ren = Output(Bool())
+  // val ren = Input(Bool())
 }
 
 class DCacheIO(xlen: Int) extends Bundle {

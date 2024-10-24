@@ -130,6 +130,8 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
 
   val decoder: Instance[Decoder] = Instantiate(new Decoder(parameter.decoderParameter))
   val decodeOutput = Wire(chiselTypeOf(decoder.io.output))
+  decoder.io.instruction := inst
+  decodeOutput := decoder.io.output
   val alu: Instance[ALU] = Instantiate(new ALU(parameter.aluParameter))
 
   val imm_out = ImmGen(decodeOutput(parameter.decoderParameter.immType), inst)
@@ -160,12 +162,14 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
       parameter.decoderParameter.ALU2_ZERO.U -> 0.U(xlen.W)
     )
   )
+  io.alu_out := alu.io.out
 
   // Branch condition 
   val brCond: Instance[BrCond] = Instantiate(new BrCond(parameter.brCondParameter))
   brCond.io.rs1 := rs1
   brCond.io.rs2 := rs2
   brCond.io.br_type := decodeOutput(parameter.decoderParameter.brType)
+  io.taken := brCond.io.taken
 
   // connect stage reg
   io.out.bits.inst := inst
@@ -289,6 +293,12 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
   val gpr_wen = io.in.bits.wb_sel =/= parameter.decoderParameter.WB_NONE.U
   io.wen := gpr_wen
 
+  // bypass connect
+  io.wb_sel := io.in.bits.wb_sel
+  io.wb_en := gpr_wen
+  io.wb_rd_addr := rd
+  io.wb_data := gprWrite
+
   // TODO handshake procotol
   val s_idle :: s_load :: s_store :: s_writeback :: Nil  = Enum(4)
   val state = RegInit(s_idle)
@@ -343,6 +353,7 @@ class Core(val parameter: CoreParameter)
   val writebackStage = Instantiate(new WriteBackStage(parameter.writebackstageParameter))
   val gpr = Module(new RegFile(xlen))
 
+  // FIXME use RegEnable and modify handshake procotol
   val fe_regs = Reg(new FetchStageData(xlen))
   val ew_regs = Reg(new ExecuteStageData(xlen, parameter.decoderParameter))
 
@@ -376,6 +387,12 @@ class Core(val parameter: CoreParameter)
   gpr.io.waddr := writebackStage.io.waddr 
   gpr.io.wdata := writebackStage.io.wdata  
   gpr.io.wen := writebackStage.io.wen 
+
+  fetchStage.io.out.ready :=  executeStage.io.in.ready
+  executeStage.io.in.valid :=  fetchStage.io.out.valid
+  executeStage.io.out.ready := writebackStage.io.in.ready
+  writebackStage.io.in.valid := executeStage.io.out.valid
+
 }
 
 
