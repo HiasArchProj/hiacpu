@@ -17,7 +17,7 @@ object HIAParameter {
 
 /** Parameter of [[HIA]] */
 case class HIAParameter(width: Int, useAsyncReset: Boolean) extends SerializableModuleParameter {
-  val coreParameter = CoreParameter(width)
+  val coreParameter = CoreParameter()
   val cacheParameter = CacheParameter(width)
 }
 

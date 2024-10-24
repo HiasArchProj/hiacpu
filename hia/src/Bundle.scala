@@ -15,7 +15,7 @@ class DCacheIO(xlen: Int) extends Bundle {
   // TODO modify HIATestBench and DPI-C
   val raddr = Input(UInt(xlen.W))
   val rdata = Output(UInt(xlen.W))
-  val ren = Output(Bool())
+  val ren = Input(Bool())
   val waddr = Input(UInt(xlen.W))
   val wen = Input(Bool())
   val wdata = Input(UInt(xlen.W))

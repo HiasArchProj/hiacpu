@@ -21,6 +21,9 @@ class FetchStageData(xlen: Int) extends Bundle {
 }
 
 class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {
+  val clock = Input(Clock())
+  val reset = Input(Bool())
+
   val out = Decoupled(new FetchStageData(parameter.xlen))
 
   // TODO add handshaking protocol 
@@ -36,10 +39,24 @@ class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {
 class FetchStage(val parameter: FetchStageParameter)
     extends FixedIORawModule(new FetchStageInterface(parameter))
     with SerializableModule[FetchStageParameter]
-    with Public {
+    with Public 
+    with ImplicitClock
+    with ImplicitReset {
+  override protected def implicitClock: Clock = io.clock
+  override protected def implicitReset: Reset = io.reset
   val xlen = parameter.xlen
 
   val pc = RegInit((parameter.PC_START-4).U(xlen.W))
+
+  val s_idle :: s_wait_ready :: Nil = Enum(2)
+  val state = RegInit(s_idle)
+  state := MuxLookup(state, s_idle)(Seq(
+    s_idle -> Mux(io.out.valid, s_wait_ready, s_idle),
+    s_wait_ready -> Mux(io.out.ready, s_idle, s_wait_ready)
+  ))
+
+  io.out.valid := true.B // FIXME maybe wrong
+
   val next_pc = MuxCase(
     (pc+4.U),
     Seq(
@@ -52,15 +69,6 @@ class FetchStage(val parameter: FetchStageParameter)
   io.next_pc := next_pc
   io.out.bits.pc := next_pc
   io.out.bits.inst := io.inst
-
-  val s_idle :: s_wait_ready :: Nil = Enum(2)
-  val state = RegInit(s_idle)
-  state := MuxLookup(state, s_idle)(Seq(
-    s_idle -> Mux(io.out.valid, s_wait_ready, s_idle),
-    s_wait_ready -> Mux(io.out.ready, s_idle, s_wait_ready)
-  ))
-
-  io.out.valid := true.B // FIXME maybe wrong
 }
 
 
@@ -87,6 +95,9 @@ class ExecuteStageData(xlen: Int, decoderParameter: DecoderParameter) extends Bu
 }
 
 class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
+  val clock = Input(Clock())
+  val reset = Input(Bool())
+
   val out = Decoupled(new ExecuteStageData(parameter.xlen, parameter.decoderParameter))
   val in = Flipped(Decoupled(new FetchStageData(parameter.xlen)))
   val raddr1 = Output(UInt(5.W))
@@ -107,7 +118,11 @@ class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
 class ExecuteStage(val parameter: ExecuteStageParameter)
     extends FixedIORawModule(new ExecuteStageInterface(parameter))
     with SerializableModule[ExecuteStageParameter]
-    with Public {
+    with Public 
+    with ImplicitClock
+    with ImplicitReset {
+  override protected def implicitClock: Clock = io.clock
+  override protected def implicitReset: Reset = io.reset
 
   val xlen = parameter.xlen
   val inst = io.in.bits.inst
@@ -202,12 +217,15 @@ case class WriteBackStageParameter(xlen: Int, decoderParameter: DecoderParameter
 }
 
 class WriteBackStageInterface(parameter: WriteBackStageParameter) extends Bundle {
+  val clock = Input(Clock())
+  val reset = Input(Bool())
+
   val in = Flipped(Decoupled(new ExecuteStageData(parameter.xlen, parameter.decoderParameter)))
 
-  val waddr = Output(UInt(parameter.xlen.W))
-  val wdata = Input(UInt(parameter.xlen.W))
+  val waddr = Output(UInt(5.W))
+  val wdata = Output(UInt(parameter.xlen.W))
   val wen = Output(Bool())
-  val dcache = new DCacheIO(parameter.xlen)
+  val dcache = Flipped(new DCacheIO(parameter.xlen))
 
   // bypass signal
   val wb_sel = Output(UInt(parameter.decoderParameter.WB_SEL_LEN.W))
@@ -220,7 +238,11 @@ class WriteBackStageInterface(parameter: WriteBackStageParameter) extends Bundle
 class WriteBackStage(val parameter: WriteBackStageParameter)
     extends FixedIORawModule(new WriteBackStageInterface(parameter))
     with SerializableModule[WriteBackStageParameter]
-    with Public {
+    with Public 
+    with ImplicitClock
+    with ImplicitReset {
+  override protected def implicitClock: Clock = io.clock
+  override protected def implicitReset: Reset = io.reset
   val xlen = parameter.xlen
   
   val inst = io.in.bits.inst
@@ -228,12 +250,12 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
   val rd = inst(11, 7)
 
    // dcache connnect
-  io.dcache.raddr := io.in.bits.alu_out
-  io.dcache.ren := ~io.dcache.wen
-  val rdata = io.dcache.rdata
-  io.dcache.waddr := io.in.bits.alu_out
   val dcache_wen = io.in.bits.st_type =/= parameter.decoderParameter.ST_NONE.U
-  val dcahce_ren =  io.in.bits.st_type =/= parameter.decoderParameter.LD_NONE.U
+  val dcache_ren =  io.in.bits.st_type =/= parameter.decoderParameter.LD_NONE.U
+  val rdata = io.dcache.rdata
+  io.dcache.raddr := io.in.bits.alu_out
+  io.dcache.ren := dcache_ren
+  io.dcache.waddr := io.in.bits.alu_out
   io.dcache.wen := dcache_wen
   io.dcache.wdata := io.in.bits.st_data
   io.dcache.wmask := MuxLookup(io.in.bits.st_type, "b0000".U)( // TODO use args replace magic number 4, or select 4/8
@@ -271,10 +293,10 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
   val s_idle :: s_load :: s_store :: s_writeback :: Nil  = Enum(4)
   val state = RegInit(s_idle)
   state := MuxLookup(state, s_idle)(Seq(
-    s_idle -> Mux(io.in.valid, MuxCase(state, s_writeback, Seq(dcache_wen->s_load, dcahce_ren->s_load)), s_idle),
+    s_idle -> Mux(io.in.valid, MuxCase(s_writeback, Seq(dcache_wen->s_load, dcache_ren->s_load)), s_idle),
     s_load -> s_writeback,
-    s_store -> Mux(io.in.valid, MuxCase(state, s_writeback, Seq(dcache_wen->s_load, dcahce_ren->s_load)), s_idle),
-    s_writeback -> Mux(io.in.valid, MuxCase(state, s_writeback, Seq(dcache_wen->s_load, dcahce_ren->s_load)), s_idle),
+    s_store -> Mux(io.in.valid, MuxCase(s_writeback, Seq(dcache_wen->s_load, dcache_ren->s_load)), s_idle),
+    s_writeback -> Mux(io.in.valid, MuxCase(s_writeback, Seq(dcache_wen->s_load, dcache_ren->s_load)), s_idle),
   ))
   io.in.ready := MuxLookup(state, true.B)(Seq(
     s_idle -> true.B,
@@ -324,21 +346,36 @@ class Core(val parameter: CoreParameter)
   val fe_regs = Reg(new FetchStageData(xlen))
   val ew_regs = Reg(new ExecuteStageData(xlen, parameter.decoderParameter))
 
+  fetchStage.io.clock := io.clock
+  executeStage.io.clock := io.clock
+  writebackStage.io.clock := io.clock
+  fetchStage.io.reset := io.reset
+  executeStage.io.reset := io.reset
+  writebackStage.io.reset := io.reset
+
   // FIXME connect may be wrong
-  fetchStage.io.out <> fe_regs
-  fetchStage.io.inst := io.icache.rdata
+  fe_regs <> fetchStage.io.out.bits 
   io.icache.raddr := fetchStage.io.next_pc
+  fetchStage.io.inst := io.icache.rdata
   fetchStage.io.taken := executeStage.io.taken
   fetchStage.io.alu_out := executeStage.io.alu_out
 
-  executeStage.io.in <> fe_regs
-  executeStage.io.out <> ew_regs
-  executeStage.io <> gpr.io
-  executeStage.io <> writebackStage.io
+  ew_regs <> executeStage.io.out.bits
+  fe_regs <> executeStage.io.in.bits
+  gpr.io.raddr1 := executeStage.io.raddr1 
+  gpr.io.raddr2 := executeStage.io.raddr2
+  executeStage.io.rdata1 := gpr.io.rdata1 
+  executeStage.io.rdata2 := gpr.io.rdata2 
+  executeStage.io.wb_sel := writebackStage.io.wb_sel 
+  executeStage.io.wb_en := writebackStage.io.wb_en  
+  executeStage.io.wb_rd_addr := writebackStage.io.wb_rd_addr 
+  executeStage.io.wb_data := writebackStage.io.wb_data  
 
-  writebackStage.io.in <> ew_regs
+  ew_regs <> writebackStage.io.in.bits
   writebackStage.io.dcache <> io.dcache
-  writebackStage.io <> gpr.io
+  gpr.io.waddr := writebackStage.io.waddr 
+  gpr.io.wdata := writebackStage.io.wdata  
+  gpr.io.wen := writebackStage.io.wen 
 }
 
 
