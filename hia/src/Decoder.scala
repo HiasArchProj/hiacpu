@@ -72,11 +72,12 @@ case class DecoderParameter() extends SerializableModuleParameter {
 
   // ld_type
   val LD_TYPE_LEN = 3
-  val LD_LW = 0
-  val LD_LH = 1
-  val LD_LB = 2
-  val LD_LHU = 3
-  val LD_LBU = 4
+  val LD_NONE = 0
+  val LD_LW = 1
+  val LD_LH = 2
+  val LD_LB = 3
+  val LD_LHU = 4
+  val LD_LBU = 5
 
   // wb_sel
   val WB_SEL_LEN = 2
@@ -341,6 +342,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
   object UOPLD extends UOP {
     def width = LD_TYPE_LEN
 
+    def none: BitPat = encode(LD_NONE)
+
     def lw: BitPat = encode(LD_LW)
 
     def lh: BitPat = encode(LD_LH)
@@ -360,7 +363,7 @@ case class DecoderParameter() extends SerializableModuleParameter {
       case i if Seq("lb").contains(i)  => UOPLD.lb
       case i if Seq("lhu").contains(i) => UOPLD.lhu
       case i if Seq("lbu").contains(i) => UOPLD.lbu
-      case _                           => UOPLD.dontCare
+      case _                           => UOPLD.none
     }
 
     override def uopType: UOPLD.type = UOPLD
