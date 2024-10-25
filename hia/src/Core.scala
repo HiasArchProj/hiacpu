@@ -27,7 +27,7 @@ class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {
   val out = Decoupled(new FetchStageData(parameter.xlen))
 
   // TODO add handshaking protocol 
-  val next_pc = Output(UInt(5.W))
+  val next_pc = Output(UInt(parameter.xlen.W))
   val inst = Input(UInt(parameter.xlen.W))
 
   // TODO add decoder signal or interrupt
@@ -51,7 +51,7 @@ class FetchStage(val parameter: FetchStageParameter)
   val s_idle :: s_wait_ready :: Nil = Enum(2)
   val state = RegInit(s_idle)
   state := MuxLookup(state, s_idle)(Seq(
-    s_idle -> Mux(io.out.valid, s_wait_ready, s_idle),
+    s_idle -> Mux(io.out.valid & ~io.out.ready, s_wait_ready, s_idle),
     s_wait_ready -> Mux(io.out.ready, s_idle, s_wait_ready)
   ))
 
@@ -64,6 +64,7 @@ class FetchStage(val parameter: FetchStageParameter)
       (state === s_wait_ready) -> pc
     )
   )
+  pc := next_pc
 
   // connect cache and stage reg
   io.next_pc := next_pc
