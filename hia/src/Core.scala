@@ -16,24 +16,14 @@ case class FetchStageParameter(xlen: Int, decoderParameter: DecoderParameter) ex
   val PC_ALU = decoderParameter.PC_ALU.U(decoderParameter.PC_SEL_LEN.W)
 }
 
-class FetchStageData(xlen: Int) extends Bundle {
-  val inst = Output(UInt(xlen.W))
-  val pc = Output(UInt(xlen.W))
-}
 
 class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(Bool())
 
-  val out = Decoupled(new FetchStageData(parameter.xlen))
-
-  // TODO wrap this to bundle 
-  val next_pc = Output(UInt(parameter.xlen.W))
-  val inst = Input(UInt(parameter.xlen.W))
-
-  val taken = Input(Bool())
-  val pc_sel = Input(UInt(parameter.decoderParameter.PC_SEL_LEN.W))
-  val alu_out = Input(UInt(parameter.xlen.W))
+  val out = Decoupled(new FetchStageMessage(parameter.xlen))
+  val icache = Flipped(new ICacheIO(parameter.xlen))
+  val bypass = Flipped(new ExecuteStageBypassMessage(parameter.xlen, parameter.decoderParameter.PC_SEL_LEN))
 }
 
 @instantiable
@@ -61,16 +51,16 @@ class FetchStage(val parameter: FetchStageParameter)
   val next_pc = MuxCase(
     (pc+4.U),
     Seq(
-      ((io.pc_sel === parameter.PC_ALU) || io.taken) -> Cat(io.alu_out(xlen - 1, 1), 0.U(1.W)),
+      ((io.bypass.pc_sel === parameter.PC_ALU) || io.bypass.taken) -> Cat(io.bypass.alu_out(xlen - 1, 1), 0.U(1.W)),
       (state === s_wait_ready) -> pc
     )
   )
   pc := next_pc
 
   // connect cache and stage reg
-  io.next_pc := next_pc
+  io.icache.raddr := next_pc
   io.out.bits.pc := next_pc
-  io.out.bits.inst := io.inst
+  io.out.bits.inst := io.icache.rdata
 }
 
 
@@ -85,40 +75,17 @@ case class ExecuteStageParameter(xlen: Int, decoderParameter: DecoderParameter) 
   val brCondParameter = BrCondParameter(xlen, decoderParameter)
 }
 
-class ExecuteStageData(xlen: Int, decoderParameter: DecoderParameter) extends Bundle {
-  val inst = Output(UInt(xlen.W))
-  val pc = Output(UInt(xlen.W))
-  val alu_out = Output(UInt(xlen.W))
-  val st_data = Output(UInt(xlen.W))
-
-  val ld_type = Output(UInt(decoderParameter.LD_TYPE_LEN.W))
-  val st_type = Output(UInt(decoderParameter.ST_TYPE_LEN.W))
-  val wb_sel = Output(UInt(decoderParameter.WB_SEL_LEN.W))
-}
 
 class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(Bool())
 
-  val out = Decoupled(new ExecuteStageData(parameter.xlen, parameter.decoderParameter))
-  val in = Flipped(Decoupled(new FetchStageData(parameter.xlen)))
+  val out = Decoupled(new ExecuteStageMessage(parameter.xlen, parameter.decoderParameter))
+  val in = Flipped(Decoupled(new FetchStageMessage(parameter.xlen)))
 
-  // TODO warp following to bundle
-  // reg
-  val raddr1 = Output(UInt(5.W))
-  val rdata1 = Input(UInt(parameter.xlen.W))
-  val raddr2 = Output(UInt(5.W))
-  val rdata2 = Input(UInt(parameter.xlen.W))
-
-  val pc_sel = Output(UInt(parameter.decoderParameter.PC_SEL_LEN.W))
-  val taken = Output(Bool())
-  val alu_out = Output(UInt(parameter.xlen.W))
-
-  // bypass signal
-  val wb_sel = Input(UInt(parameter.decoderParameter.WB_SEL_LEN.W))
-  val wb_en = Input(Bool())
-  val wb_rd_addr = Input(UInt(5.W))
-  val wb_data = Input(UInt(parameter.xlen.W))
+  val rio = Flipped(new regReadIO(parameter.xlen))
+  val bypass_out = new ExecuteStageBypassMessage(parameter.xlen, parameter.decoderParameter.PC_SEL_LEN)
+  val bypass_in = Flipped(new WriteBackStageBypassMessage(parameter.xlen, parameter.decoderParameter.WB_SEL_LEN))
 }
 
 @instantiable
@@ -141,43 +108,43 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
   decodeOutput := decoder.io.output
   val alu: Instance[ALU] = Instantiate(new ALU(parameter.aluParameter))
 
-  io.pc_sel := decodeOutput(parameter.decoderParameter.selPC)
+  io.bypass_out.pc_sel := decodeOutput(parameter.decoderParameter.selPC)
   val imm_out = ImmGen(decodeOutput(parameter.decoderParameter.immType), inst)
 
   // read reg
-  io.raddr1 := inst(19, 15)
-  io.raddr2 := inst(24, 20)
+  io.rio.req.addr1 := inst(19, 15)
+  io.rio.req.addr2 := inst(24, 20)
 
   // bypass
-  val rs1hazard = io.wb_en && io.raddr1.orR && (io.raddr1 === io.wb_rd_addr)
-  val rs2hazard = io.wb_en && io.raddr2.orR && (io.raddr2 === io.wb_rd_addr)
-  val rs1 = Mux(io.wb_sel === parameter.decoderParameter.WB_ALU.U && rs1hazard, io.wb_data, io.rdata1)
-  val rs2 = Mux(io.wb_sel === parameter.decoderParameter.WB_ALU.U && rs2hazard, io.wb_data, io.rdata2)
+  val rs1hazard = io.bypass_in.wb_en && io.rio.req.addr1.orR && (io.rio.req.addr1 === io.bypass_in.wb_rd_addr)
+  val rs2hazard = io.bypass_in.wb_en && io.rio.req.addr2.orR && (io.rio.req.addr2 === io.bypass_in.wb_rd_addr)
+  val rs1 = Mux(io.bypass_in.wb_sel === parameter.decoderParameter.WB_ALU.U && rs1hazard, io.bypass_in.wb_data, io.rio.rsp.data1)
+  val rs2 = Mux(io.bypass_in.wb_sel === parameter.decoderParameter.WB_ALU.U && rs2hazard, io.bypass_in.wb_data, io.rio.rsp.data2)
 
   // ALU 
   alu.io.alu_op := decodeOutput(parameter.decoderParameter.aluFn)
-  alu.io.A := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu1), io.rdata1)(
+  alu.io.A := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu1), io.rio.rsp.data1)(
     Seq(
       parameter.decoderParameter.ALU1_PC.U -> pc,
-      parameter.decoderParameter.ALU1_RS1.U -> io.rdata1,
+      parameter.decoderParameter.ALU1_RS1.U -> io.rio.rsp.data1,
       parameter.decoderParameter.ALU1_ZERO.U -> 0.U(xlen.W)
     )
   )
-  alu.io.B := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu2), io.rdata2)(
+  alu.io.B := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu2), io.rio.rsp.data2)(
     Seq(
       parameter.decoderParameter.ALU2_IMM.U -> imm_out,
-      parameter.decoderParameter.ALU2_RS2.U -> io.rdata2,
+      parameter.decoderParameter.ALU2_RS2.U -> io.rio.rsp.data2,
       parameter.decoderParameter.ALU2_ZERO.U -> 0.U(xlen.W)
     )
   )
-  io.alu_out := alu.io.out
+  io.bypass_out.alu_out := alu.io.out
 
   // Branch condition 
   val brCond: Instance[BrCond] = Instantiate(new BrCond(parameter.brCondParameter))
   brCond.io.rs1 := rs1
   brCond.io.rs2 := rs2
   brCond.io.br_type := decodeOutput(parameter.decoderParameter.brType)
-  io.taken := brCond.io.taken
+  io.bypass_out.taken := brCond.io.taken
 
   // connect stage reg
   io.out.bits.inst := inst
@@ -208,7 +175,6 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
     )
   )
 
-   // FIXME check grammar correct?
   val out_list = ListLookup(state, List(false.B, false.B), Array(
     BitPat(s_idle) -> List(true.B, false.B),
     BitPat(s_wait_ready) -> List(false.B, true.B),
@@ -232,18 +198,10 @@ class WriteBackStageInterface(parameter: WriteBackStageParameter) extends Bundle
   val clock = Input(Clock())
   val reset = Input(Bool())
 
-  val in = Flipped(Decoupled(new ExecuteStageData(parameter.xlen, parameter.decoderParameter)))
-
-  val waddr = Output(UInt(5.W))
-  val wdata = Output(UInt(parameter.xlen.W))
-  val wen = Output(Bool())
+  val in = Flipped(Decoupled(new ExecuteStageMessage(parameter.xlen, parameter.decoderParameter)))
+  val rio = Flipped(new regWriteIO(parameter.xlen))
   val dcache = Flipped(new DCacheIO(parameter.xlen))
-
-  // bypass signal
-  val wb_sel = Output(UInt(parameter.decoderParameter.WB_SEL_LEN.W))
-  val wb_en = Output(Bool())
-  val wb_rd_addr = Output(UInt(5.W))
-  val wb_data = Output(UInt(parameter.xlen.W))
+  val bypass = new WriteBackStageBypassMessage(parameter.xlen, parameter.decoderParameter.WB_SEL_LEN)
 }
 
 @instantiable
@@ -296,16 +254,16 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
       parameter.decoderParameter.WB_PC4.U -> (pc + 4.U).zext
     )
   ).asUInt
-  io.waddr := rd
-  io.wdata := gprWrite
+  io.rio.req.waddr := rd
+  io.rio.req.wdata := gprWrite
   val gpr_wen = io.in.bits.wb_sel =/= parameter.decoderParameter.WB_NONE.U
-  io.wen := gpr_wen
+  io.rio.req.wen := gpr_wen
 
   // bypass connect
-  io.wb_sel := io.in.bits.wb_sel
-  io.wb_en := gpr_wen
-  io.wb_rd_addr := rd
-  io.wb_data := gprWrite
+  io.bypass.wb_sel := io.in.bits.wb_sel
+  io.bypass.wb_en := gpr_wen
+  io.bypass.wb_rd_addr := rd
+  io.bypass.wb_data := gprWrite
 
   // TODO handshake procotol
   val s_idle :: s_load :: s_store :: s_writeback :: Nil  = Enum(4)
@@ -341,9 +299,12 @@ case class CoreParameter() extends SerializableModuleParameter {
 class CoreInterface(parameter: CoreParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(Bool())
+  
   val icache = Flipped(new ICacheIO(parameter.xlen))
   val dcache = Flipped(new DCacheIO(parameter.xlen))
 }
+
+
 
 @instantiable
 class Core(val parameter: CoreParameter)
@@ -355,6 +316,12 @@ class Core(val parameter: CoreParameter)
   override protected def implicitClock: Clock = io.clock
   override protected def implicitReset: Reset = io.reset
 
+  def pipelineConnect[T <: Data, T2 <: Data](prevOut: DecoupledIO[T], thisIn: DecoupledIO[T2]) = {
+    prevOut.ready := thisIn.ready
+    thisIn.valid := prevOut.valid
+    thisIn.bits := RegEnable(prevOut.bits, prevOut.valid && thisIn.ready)
+  }
+
   val xlen = parameter.xlen
   val fetchStage = Instantiate(new FetchStage(parameter.fetchstageParameter))
   val executeStage = Instantiate(new ExecuteStage(parameter.executestageParameter))
@@ -362,8 +329,8 @@ class Core(val parameter: CoreParameter)
   val gpr = Module(new RegFile(xlen))
 
   // FIXME use RegEnable and modify handshake procotol
-  val fe_regs = Reg(new FetchStageData(xlen))
-  val ew_regs = Reg(new ExecuteStageData(xlen, parameter.decoderParameter))
+  // val fe_regs = Reg(new FetchStageMessage(xlen))
+  // val ew_regs = Reg(new ExecuteStageMessage(xlen, parameter.decoderParameter))
 
   fetchStage.io.clock := io.clock
   executeStage.io.clock := io.clock
@@ -372,54 +339,25 @@ class Core(val parameter: CoreParameter)
   executeStage.io.reset := io.reset
   writebackStage.io.reset := io.reset
 
-  fe_regs <> fetchStage.io.out.bits 
-  io.icache.raddr := fetchStage.io.next_pc
-  fetchStage.io.inst := io.icache.rdata
-  fetchStage.io.taken := executeStage.io.taken
-  fetchStage.io.pc_sel := executeStage.io.pc_sel
-  fetchStage.io.alu_out := executeStage.io.alu_out
 
-  ew_regs <> executeStage.io.out.bits
-  fe_regs <> executeStage.io.in.bits
-  gpr.io.raddr1 := executeStage.io.raddr1 
-  gpr.io.raddr2 := executeStage.io.raddr2
-  executeStage.io.rdata1 := gpr.io.rdata1 
-  executeStage.io.rdata2 := gpr.io.rdata2 
-  executeStage.io.wb_sel := writebackStage.io.wb_sel 
-  executeStage.io.wb_en := writebackStage.io.wb_en  
-  executeStage.io.wb_rd_addr := writebackStage.io.wb_rd_addr 
-  executeStage.io.wb_data := writebackStage.io.wb_data  
+  pipelineConnect(fetchStage.io.out, executeStage.io.in)
+  pipelineConnect(executeStage.io.out, writebackStage.io.in)
 
-  ew_regs <> writebackStage.io.in.bits
+  fetchStage.io.icache <> io.icache
+  fetchStage.io.bypass <> executeStage.io.bypass_out
+  executeStage.io.bypass_in <> writebackStage.io.bypass
+  executeStage.io.rio <> gpr.io.r
+  writebackStage.io.rio <> gpr.io.w
   writebackStage.io.dcache <> io.dcache
-  gpr.io.waddr := writebackStage.io.waddr 
-  gpr.io.wdata := writebackStage.io.wdata  
-  gpr.io.wen := writebackStage.io.wen 
-
-  fetchStage.io.out.ready :=  executeStage.io.in.ready
-  executeStage.io.in.valid :=  fetchStage.io.out.valid
-  executeStage.io.out.ready := writebackStage.io.in.ready
-  writebackStage.io.in.valid := executeStage.io.out.valid
-
 }
 
-
-class RegFileIO(xlen: Int) extends Bundle {
-  val raddr1 = Input(UInt(5.W))
-  val raddr2 = Input(UInt(5.W))
-  val rdata1 = Output(UInt(xlen.W))
-  val rdata2 = Output(UInt(xlen.W))
-  val wen = Input(Bool())
-  val waddr = Input(UInt(5.W))
-  val wdata = Input(UInt(xlen.W))
-}
 
 class RegFile(xlen: Int) extends Module {
   val io = IO(new RegFileIO(xlen))
   val regs = Mem(32, UInt(xlen.W))
-  io.rdata1 := Mux(io.raddr1.orR, regs(io.raddr1), 0.U)
-  io.rdata2 := Mux(io.raddr2.orR, regs(io.raddr2), 0.U)
-  when(io.wen & io.waddr.orR) {
-    regs(io.waddr) := io.wdata
+  io.r.rsp.data1 := Mux(io.r.req.addr1.orR, regs(io.r.req.addr1), 0.U)
+  io.r.rsp.data2 := Mux(io.r.req.addr2.orR, regs(io.r.req.addr2), 0.U)
+  when(io.w.req.wen & io.w.req.waddr.orR) {
+    regs(io.w.req.waddr) := io.w.req.wdata
   }
 }
