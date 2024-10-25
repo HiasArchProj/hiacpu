@@ -62,12 +62,13 @@ case class DecoderParameter() extends SerializableModuleParameter {
 
   // br_type
   val BR_TYPE_LEN = 3
-  val BR_LTU = 0
-  val BR_LT = 1
-  val BR_EQ = 2
-  val BR_GEU = 3
-  val BR_GE = 4
-  val BR_NE = 5
+  val BR_NONE = 0
+  val BR_LTU = 1
+  val BR_LT = 2
+  val BR_EQ = 3
+  val BR_GEU = 4
+  val BR_GE = 5
+  val BR_NE = 6
 
   // st_type
   val ST_TYPE_LEN = 2
@@ -122,6 +123,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
   object UOPPC extends UOP {
     def width = PC_SEL_LEN
 
+    def pc4: BitPat = encode(PC_4)
+
     def alu: BitPat = encode(PC_ALU)
 
     def epc: BitPat = encode(PC_EPC)
@@ -134,7 +137,7 @@ case class DecoderParameter() extends SerializableModuleParameter {
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
       case i if Seq("jal", "jalr").contains(i) => UOPPC.alu
       case i if Seq("mret").contains(i) => UOPPC.epc
-      case _ => UOPPC.dontCare
+      case _ => UOPPC.pc4
     }
 
     override def uopType: UOPPC.type = UOPPC
@@ -161,8 +164,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
       // format: off
-      case i if Seq("fld", "flw", "hsv.w", "hsv.b", "hsv.h", "hsv.d", "ori", "lhu", "lw", "andi", "sltiu", "lh", "jalr", "lbu", "xori", "slti", "addi", "lb", "srli", "srai", "slli", "ld", "sraiw", "lwu", "addiw", "srliw", "slliw", "flh").contains(i) => UOPIMM.i
-      case i if Seq("fsd", "fsh", "fsw", "sb", "sd", "sh", "sw").contains(i) => UOPIMM.s
+      case i if Seq("ori", "lhu", "lw", "andi", "sltiu", "lh", "jalr", "lbu", "xori", "slti", "addi", "lb", "srli", "srai", "slli", "ld", "sraiw", "lwu", "addiw", "srliw", "slliw").contains(i) => UOPIMM.i
+      case i if Seq("sb", "sd", "sh", "sw").contains(i) => UOPIMM.s
       case i if Seq("beq", "bge", "bgeu", "blt", "bltu", "bne").contains(i) => UOPIMM.sb
       case i if Seq("auipc", "lui").contains(i) => UOPIMM.u
       case i if Seq("jal").contains(i) => UOPIMM.uj
@@ -176,6 +179,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
 
   object UOPBR extends UOP {
     def width = BR_TYPE_LEN
+
+    def none: BitPat = encode(BR_NONE)
 
     def ltu: BitPat = encode(BR_LTU)
 
@@ -200,7 +205,7 @@ case class DecoderParameter() extends SerializableModuleParameter {
       case "bgeu" => UOPBR.geu
       case "bge"  => UOPBR.ge
       case "bne"  => UOPBR.ne
-      case _      => UOPBR.dontCare
+      case _      => UOPBR.none
     }
 
     override def uopType: UOPBR.type = UOPBR
