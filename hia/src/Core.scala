@@ -38,21 +38,22 @@ class FetchStage(val parameter: FetchStageParameter)
   val xlen = parameter.xlen
 
   val pc = RegInit((parameter.PC_START-4).U(xlen.W))
+  val branch = (io.bypass.pc_sel === parameter.PC_ALU) || io.bypass.taken
 
-  val s_idle :: s_wait_ready :: Nil = Enum(2)
-  val state = RegInit(s_idle)
-  state := MuxLookup(state, s_idle)(Seq(
-    s_idle -> Mux(io.out.valid & ~io.out.ready, s_wait_ready, s_idle),
-    s_wait_ready -> Mux(io.out.ready, s_idle, s_wait_ready)
-  ))
+  // val s_idle :: s_wait_ready :: Nil = Enum(2)
+  // val state = RegInit(s_idle)
+  // state := MuxLookup(state, s_idle)(Seq(
+  //   s_idle -> Mux(io.out.valid && ~io.out.ready, s_wait_ready, s_idle),
+  //   s_wait_ready -> Mux(io.out.ready, s_idle, s_wait_ready)
+  // ))
 
-  io.out.valid := true.B // FIXME maybe wrong
+  io.out.valid := ~io.reset.asBool// FIXME maybe wrong
 
   val next_pc = MuxCase(
     (pc+4.U),
     Seq(
-      ((io.bypass.pc_sel === parameter.PC_ALU) || io.bypass.taken) -> Cat(io.bypass.alu_out(xlen - 1, 1), 0.U(1.W)),
-      (state === s_wait_ready) -> pc
+      (branch) -> Cat(io.bypass.alu_out(xlen - 1, 1), 0.U(1.W)),
+      (~io.out.ready) -> pc
     )
   )
   pc := next_pc
@@ -327,10 +328,6 @@ class Core(val parameter: CoreParameter)
   val executeStage = Instantiate(new ExecuteStage(parameter.executestageParameter))
   val writebackStage = Instantiate(new WriteBackStage(parameter.writebackstageParameter))
   val gpr = Module(new RegFile(xlen))
-
-  // FIXME use RegEnable and modify handshake procotol
-  // val fe_regs = Reg(new FetchStageMessage(xlen))
-  // val ew_regs = Reg(new ExecuteStageMessage(xlen, parameter.decoderParameter))
 
   fetchStage.io.clock := io.clock
   executeStage.io.clock := io.clock
