@@ -42,6 +42,12 @@ case class DecoderParameter() extends SerializableModuleParameter {
   val IMM_I = 4
   val IMM_Z = 5
 
+  // pc_sel
+  val PC_SEL_LEN = 2
+  val PC_4 = 0
+  val PC_ALU = 1
+  val PC_EPC = 2
+
   // selAlu1
   val ALU1_SEL_LEN = 2
   val ALU1_PC = 0
@@ -106,12 +112,33 @@ case class DecoderParameter() extends SerializableModuleParameter {
     .map(HiaDecodePattern(_))
     .toSeq
 
-  private val instructionDecodeFields = Seq(immType, brType, selAlu1, selAlu2, aluFn, stType, ldType, selWB)
+  private val instructionDecodeFields = Seq(selPC, immType, brType, selAlu1, selAlu2, aluFn, stType, ldType, selWB)
 
   val table: DecodeTable[HiaDecodePattern] = new DecodeTable[HiaDecodePattern](
     instructionDecodePattern,
     instructionDecodeFields
   )
+
+  object UOPPC extends UOP {
+    def width = PC_SEL_LEN
+
+    def alu: BitPat = encode(PC_ALU)
+
+    def epc: BitPat = encode(PC_EPC)
+
+  }
+
+  object selPC extends UOPDecodeField[HiaDecodePattern] {
+    override def name: String = "pc_sel"
+
+    override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
+      case i if Seq("jal", "jalr").contains(i) => UOPPC.alu
+      case i if Seq("mret").contains(i) => UOPPC.epc
+      case _ => UOPPC.dontCare
+    }
+
+    override def uopType: UOPPC.type = UOPPC
+  }  
 
   object UOPIMM extends UOP {
     def width = IMM_SEL_LEN

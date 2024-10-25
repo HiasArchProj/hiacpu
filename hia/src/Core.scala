@@ -5,14 +5,16 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 import os.stat
+import chisel3.util.experimental.decode.decoder
 
 object FetchStageParameter {
   implicit def rwP: upickle.default.ReadWriter[FetchStageParameter] =
     upickle.default.macroRW[FetchStageParameter]
 }
 
-case class FetchStageParameter(xlen: Int) extends SerializableModuleParameter {
+case class FetchStageParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {
   val PC_START = 0x8000_0000
+  val PC_ALU = decoderParameter.PC_ALU.U(decoderParameter.PC_SEL_LEN.W)
 }
 
 class FetchStageData(xlen: Int) extends Bundle {
@@ -26,12 +28,12 @@ class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {
 
   val out = Decoupled(new FetchStageData(parameter.xlen))
 
-  // TODO add handshaking protocol 
+  // TODO wrap this to bundle 
   val next_pc = Output(UInt(parameter.xlen.W))
   val inst = Input(UInt(parameter.xlen.W))
 
-  // TODO add decoder signal or interrupt
   val taken = Input(Bool())
+  val pc_sel = Input(UInt(parameter.decoderParameter.PC_SEL_LEN.W))
   val alu_out = Input(UInt(parameter.xlen.W))
 }
 
@@ -60,7 +62,7 @@ class FetchStage(val parameter: FetchStageParameter)
   val next_pc = MuxCase(
     (pc+4.U),
     Seq(
-      io.taken -> Cat(io.alu_out(xlen - 1, 1), 0.U(1.W)),
+      ((io.pc_sel === parameter.PC_ALU) || io.taken) -> Cat(io.alu_out(xlen - 1, 1), 0.U(1.W)),
       (state === s_wait_ready) -> pc
     )
   )
@@ -101,10 +103,15 @@ class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
 
   val out = Decoupled(new ExecuteStageData(parameter.xlen, parameter.decoderParameter))
   val in = Flipped(Decoupled(new FetchStageData(parameter.xlen)))
+
+  // TODO warp following to bundle
+  // reg
   val raddr1 = Output(UInt(5.W))
   val rdata1 = Input(UInt(parameter.xlen.W))
   val raddr2 = Output(UInt(5.W))
   val rdata2 = Input(UInt(parameter.xlen.W))
+
+  val pc_sel = Output(UInt(parameter.decoderParameter.PC_SEL_LEN.W))
   val taken = Output(Bool())
   val alu_out = Output(UInt(parameter.xlen.W))
 
@@ -135,6 +142,7 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
   decodeOutput := decoder.io.output
   val alu: Instance[ALU] = Instantiate(new ALU(parameter.aluParameter))
 
+  io.pc_sel := decodeOutput(parameter.decoderParameter.selPC)
   val imm_out = ImmGen(decodeOutput(parameter.decoderParameter.immType), inst)
 
   // read reg
@@ -326,7 +334,7 @@ case class CoreParameter() extends SerializableModuleParameter {
   def xlen: Int = 32 // TODO depend on instructionSets
 
   val decoderParameter = DecoderParameter()
-  val fetchstageParameter = FetchStageParameter(xlen)
+  val fetchstageParameter = FetchStageParameter(xlen, decoderParameter)
   val executestageParameter = ExecuteStageParameter(xlen, decoderParameter)
   val writebackstageParameter = WriteBackStageParameter(xlen, decoderParameter)
 }
@@ -365,11 +373,11 @@ class Core(val parameter: CoreParameter)
   executeStage.io.reset := io.reset
   writebackStage.io.reset := io.reset
 
-  // FIXME connect may be wrong
   fe_regs <> fetchStage.io.out.bits 
   io.icache.raddr := fetchStage.io.next_pc
   fetchStage.io.inst := io.icache.rdata
   fetchStage.io.taken := executeStage.io.taken
+  fetchStage.io.pc_sel := executeStage.io.pc_sel
   fetchStage.io.alu_out := executeStage.io.alu_out
 
   ew_regs <> executeStage.io.out.bits
