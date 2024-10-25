@@ -105,7 +105,7 @@ case class DecoderParameter() extends SerializableModuleParameter {
   val ALU_SRA = 9
 
   private val instructionTable = org.chipsalliance.rvdecoderdb.instructions(org.chipsalliance.rvdecoderdb.extractResource(getClass.getClassLoader))
-  private val targetSets = Set("rv_i", "rv_zicsr", "rv_zifencei", "rv_system") // TODO add more instructionSets
+  private val targetSets = Set("rv_i", "rv32_i") // TODO add more instructionSets
   private val instructionDecodePattern = instructionTable
     .filter(instr => targetSets.contains(instr.instructionSet.name))
     .filter(_.pseudoFrom.isEmpty)
