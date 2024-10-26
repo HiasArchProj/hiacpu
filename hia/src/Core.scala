@@ -40,14 +40,14 @@ class FetchStage(val parameter: FetchStageParameter)
   val pc = RegInit((parameter.PC_START-4).U(xlen.W))
   val branch = (io.bypass.pc_sel === parameter.PC_ALU) || io.bypass.taken
 
-  // val s_idle :: s_wait_ready :: Nil = Enum(2)
-  // val state = RegInit(s_idle)
-  // state := MuxLookup(state, s_idle)(Seq(
-  //   s_idle -> Mux(io.out.valid && ~io.out.ready, s_wait_ready, s_idle),
-  //   s_wait_ready -> Mux(io.out.ready, s_idle, s_wait_ready)
-  // ))
+  val s_idle :: s_after_branch :: Nil = Enum(2)
+  val state = RegInit(s_idle)
+  state := MuxLookup(state, s_idle)(Seq(
+    s_idle -> Mux(branch, s_after_branch, s_idle),
+    s_after_branch -> s_idle
+  ))
 
-  io.out.valid := ~io.reset.asBool// FIXME maybe wrong
+  io.out.valid := (~io.reset.asBool) && (~branch || (state === s_after_branch))// FIXME maybe wrong
 
   val next_pc = MuxCase(
     (pc+4.U),
@@ -60,7 +60,7 @@ class FetchStage(val parameter: FetchStageParameter)
 
   // connect cache and stage reg
   io.icache.raddr := next_pc
-  io.out.bits.pc := next_pc
+  io.out.bits.pc := pc
   io.out.bits.inst := io.icache.rdata
 }
 
@@ -157,34 +157,9 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
   io.out.bits.wb_sel := decodeOutput(parameter.decoderParameter.selWB)
 
   // handshake protocol
-  val s_idle :: s_wait_ready :: s_wait_valid :: s_working :: Nil= Enum(4)
-  val state = RegInit(s_idle)
-  state := MuxLookup(state, s_idle)(
-    Seq(
-      s_idle -> MuxLookup(Cat(io.in.valid, io.out.ready), s_idle)(Seq(
-                  "b10".U -> s_wait_ready,
-                  "b01".U -> s_wait_valid,
-                  "b11".U -> s_working
-               )),
-      s_wait_ready -> Mux(io.out.ready, s_working, s_wait_ready),
-      s_wait_valid -> Mux(io.in.valid, s_working, s_wait_valid),
-      s_working -> MuxCase(s_working, Seq(
-                     ~io.out.ready -> s_wait_ready,
-                     ~io.in.valid-> s_wait_valid,
-                     (~io.in.valid && ~io.out.ready) -> s_idle
-                  ))
-    )
-  )
-
-  val out_list = ListLookup(state, List(false.B, false.B), Array(
-    BitPat(s_idle) -> List(true.B, false.B),
-    BitPat(s_wait_ready) -> List(false.B, true.B),
-    BitPat(s_wait_valid) -> List(true.B, false.B),
-    BitPat(s_working) -> List(true.B, true.B)
-  ))
-
-  io.in.ready := out_list(0) 
-  io.out.valid := out_list(1) 
+  // TODO maybe wrong when add mux or div
+  io.in.ready := io.out.ready
+  io.out.valid := io.in.valid
 }
 
 object WriteBackStageParameter {
