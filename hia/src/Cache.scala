@@ -37,6 +37,7 @@ class Cache(val parameter: CacheParameter)
   // icache read memory
   io.imem.r.req.addr := io.icache.raddr
   io.icache.rdata := io.imem.r.resp.bits.data
+  io.icache.rvalid := io.imem.r.resp.valid
   
   // dcache read memory
   io.dmem.r.req.addr := io.dcache.raddr
