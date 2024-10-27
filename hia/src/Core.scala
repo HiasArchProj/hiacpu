@@ -193,7 +193,7 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
   
   val inst = io.in.bits.inst
   val pc = io.in.bits.pc
-  val rd = inst(11, 7)
+  val rd = inst(11, 7) // TODO maybe use 5 bits reg instead of 32 bits
 
    // dcache connnect
   val dcache_wen = io.in.bits.st_type =/= parameter.decoderParameter.ST_NONE.U
