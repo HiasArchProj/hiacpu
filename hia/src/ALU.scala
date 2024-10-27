@@ -21,6 +21,7 @@ case class ALUParameter(xlen: Int, decoderParameter: DecoderParameter) extends S
   val ALU_SLTU =decoderParameter.ALU_SLTU
   val ALU_SRL = decoderParameter.ALU_SRL
   val ALU_SRA = decoderParameter.ALU_SRA
+  val ALU_COPY2 = decoderParameter.ALU_COPY2
 }
 
 class ALUInterface(parameter: ALUParameter) extends Bundle {
@@ -45,6 +46,7 @@ class ALU(val parameter: ALUParameter)
   val ALU_SLTU = parameter.ALU_SLTU.U
   val ALU_SRL = parameter.ALU_SRL.U
   val ALU_SRA = parameter.ALU_SRA.U
+  val ALU_COPY2 = parameter.ALU_COPY2.U
 
   val shamt = io.B(4, 0).asUInt
 
@@ -60,6 +62,7 @@ class ALU(val parameter: ALUParameter)
       ALU_SLTU -> (io.A < io.B),
       ALU_SRL -> (io.A >> shamt),
       ALU_SRA -> (io.A.asSInt >> shamt).asUInt,
+      ALU_COPY2 -> io.B
     )
   )
 }

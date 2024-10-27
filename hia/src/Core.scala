@@ -84,7 +84,8 @@ class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
   val in = Flipped(Decoupled(new FetchStageMessage(parameter.xlen)))
 
   val inst = Input(UInt(parameter.xlen.W))
-  val rio = Flipped(new regReadIO(parameter.xlen))
+  val gpr_read = Flipped(new regReadIO(parameter.xlen))
+  val csr = Flipped(new CSRFileIO(parameter.xlen))
   val bypass_out = new ExecuteStageBypassMessage(parameter.xlen, parameter.decoderParameter.PC_SEL_LEN)
   val bypass_in = Flipped(new WriteBackStageBypassMessage(parameter.xlen, parameter.decoderParameter.WB_SEL_LEN))
 }
@@ -113,28 +114,39 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
   val imm_out = ImmGen(decodeOutput(parameter.decoderParameter.immType), inst)
 
   // read reg
-  io.rio.req.addr1 := inst(19, 15)
-  io.rio.req.addr2 := inst(24, 20)
+  io.gpr_read.req.addr1 := inst(19, 15)
+  io.gpr_read.req.addr2 := inst(24, 20)
 
   // bypass
-  val rs1hazard = io.bypass_in.wb_en && io.rio.req.addr1.orR && (io.rio.req.addr1 === io.bypass_in.wb_rd_addr)
-  val rs2hazard = io.bypass_in.wb_en && io.rio.req.addr2.orR && (io.rio.req.addr2 === io.bypass_in.wb_rd_addr)
-  val rs1 = Mux(io.bypass_in.wb_sel === parameter.decoderParameter.WB_ALU.U && rs1hazard, io.bypass_in.wb_data, io.rio.rsp.data1)
-  val rs2 = Mux(io.bypass_in.wb_sel === parameter.decoderParameter.WB_ALU.U && rs2hazard, io.bypass_in.wb_data, io.rio.rsp.data2)
+  val rs1hazard = io.bypass_in.wb_en && io.gpr_read.req.addr1.orR && (io.gpr_read.req.addr1 === io.bypass_in.wb_rd_addr)
+  val rs2hazard = io.bypass_in.wb_en && io.gpr_read.req.addr2.orR && (io.gpr_read.req.addr2 === io.bypass_in.wb_rd_addr)
+  val rs1 = Mux(io.bypass_in.wb_sel === parameter.decoderParameter.WB_ALU.U && rs1hazard, io.bypass_in.wb_data, io.gpr_read.rsp.data1)
+  val rs2 = Mux(io.bypass_in.wb_sel === parameter.decoderParameter.WB_ALU.U && rs2hazard, io.bypass_in.wb_data, io.gpr_read.rsp.data2)
+
+  // csr
+  val csr_data = io.csr.rdata
+  val csrType = decodeOutput(parameter.decoderParameter.csrType)
+  val CSR_NONE = parameter.decoderParameter.CSR_NONE.U(parameter.decoderParameter.CSR_TYPE_LEN.W)
+  io.csr.csr_addr := inst(31, 20)
+  io.csr.wen := Mux(csrType === CSR_NONE, false.B, true.B)
+  io.csr.wdata := alu.io.out
+  io.out.bits.csr_data := csr_data
 
   // ALU 
   alu.io.alu_op := decodeOutput(parameter.decoderParameter.aluFn)
-  alu.io.A := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu1), io.rio.rsp.data1)(
+  alu.io.A := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu1), io.gpr_read.rsp.data1)(
     Seq(
       parameter.decoderParameter.ALU1_PC.U -> pc,
-      parameter.decoderParameter.ALU1_RS1.U -> io.rio.rsp.data1,
-      parameter.decoderParameter.ALU1_ZERO.U -> 0.U(xlen.W)
+      parameter.decoderParameter.ALU1_RS1.U -> io.gpr_read.rsp.data1,
+      parameter.decoderParameter.ALU1_ZERO.U -> 0.U(xlen.W),
+      parameter.decoderParameter.ALU1_CSR.U -> csr_data
     )
   )
-  alu.io.B := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu2), io.rio.rsp.data2)(
+  alu.io.B := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu2), io.gpr_read.rsp.data2)(
     Seq(
       parameter.decoderParameter.ALU2_IMM.U -> imm_out,
-      parameter.decoderParameter.ALU2_RS2.U -> io.rio.rsp.data2,
+      parameter.decoderParameter.ALU2_RS2.U -> io.gpr_read.rsp.data2,
+      parameter.decoderParameter.ALU2_RS1.U -> io.gpr_read.rsp.data1,
       parameter.decoderParameter.ALU2_ZERO.U -> 0.U(xlen.W)
     )
   )
@@ -146,6 +158,7 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
   brCond.io.rs2 := rs2
   brCond.io.br_type := decodeOutput(parameter.decoderParameter.brType)
   io.bypass_out.taken := brCond.io.taken
+
 
   // connect stage reg
   io.out.bits.inst := inst
@@ -175,7 +188,7 @@ class WriteBackStageInterface(parameter: WriteBackStageParameter) extends Bundle
   val reset = Input(Bool())
 
   val in = Flipped(Decoupled(new ExecuteStageMessage(parameter.xlen, parameter.decoderParameter)))
-  val rio = Flipped(new regWriteIO(parameter.xlen))
+  val gpr_write = Flipped(new regWriteIO(parameter.xlen))
   val dcache = Flipped(new DCacheIO(parameter.xlen))
   val bypass = new WriteBackStageBypassMessage(parameter.xlen, parameter.decoderParameter.WB_SEL_LEN)
 }
@@ -227,13 +240,14 @@ class WriteBackStage(val parameter: WriteBackStageParameter)
     Seq(
       parameter.decoderParameter.WB_MEM.U -> load,
       parameter.decoderParameter.WB_ALU.U -> io.in.bits.alu_out.zext,
-      parameter.decoderParameter.WB_PC4.U -> (pc + 4.U).zext
+      parameter.decoderParameter.WB_PC4.U -> (pc + 4.U).zext,
+      parameter.decoderParameter.WB_CSR.U -> io.in.bits.csr_data.zext
     )
   ).asUInt
-  io.rio.req.waddr := rd
-  io.rio.req.wdata := gprWrite
+  io.gpr_write.req.waddr := rd
+  io.gpr_write.req.wdata := gprWrite
   val gpr_wen = io.in.bits.wb_sel =/= parameter.decoderParameter.WB_NONE.U
-  io.rio.req.wen := gpr_wen
+  io.gpr_write.req.wen := gpr_wen
 
   // bypass connect
   io.bypass.wb_sel := io.in.bits.wb_sel
@@ -270,6 +284,7 @@ case class CoreParameter() extends SerializableModuleParameter {
   val fetchstageParameter = FetchStageParameter(xlen, decoderParameter)
   val executestageParameter = ExecuteStageParameter(xlen, decoderParameter)
   val writebackstageParameter = WriteBackStageParameter(xlen, decoderParameter)
+  val csrParameter = CSRParameter(xlen)
 }
 
 class CoreInterface(parameter: CoreParameter) extends Bundle {
@@ -303,6 +318,8 @@ class Core(val parameter: CoreParameter)
   val executeStage = Instantiate(new ExecuteStage(parameter.executestageParameter))
   val writebackStage = Instantiate(new WriteBackStage(parameter.writebackstageParameter))
   val gpr = Module(new RegFile(xlen))
+  val csr: Instance[CSR] = Instantiate(new CSR(parameter.csrParameter))
+
 
   fetchStage.io.clock := io.clock
   executeStage.io.clock := io.clock
@@ -310,6 +327,8 @@ class Core(val parameter: CoreParameter)
   fetchStage.io.reset := io.reset
   executeStage.io.reset := io.reset
   writebackStage.io.reset := io.reset
+  csr.io.clock := io.clock
+  csr.io.reset := io.reset
 
 
   pipelineConnect(fetchStage.io.out, executeStage.io.in)
@@ -319,8 +338,9 @@ class Core(val parameter: CoreParameter)
   fetchStage.io.bypass <> executeStage.io.bypass_out
   executeStage.io.inst := io.icache.rdata
   executeStage.io.bypass_in <> writebackStage.io.bypass
-  executeStage.io.rio <> gpr.io.r
-  writebackStage.io.rio <> gpr.io.w
+  executeStage.io.gpr_read <> gpr.io.r
+  executeStage.io.csr <> csr.io.csr
+  writebackStage.io.gpr_write <> gpr.io.w
   writebackStage.io.dcache <> io.dcache
 }
 

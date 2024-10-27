@@ -49,16 +49,18 @@ case class DecoderParameter() extends SerializableModuleParameter {
   val PC_EPC = 2
 
   // selAlu1
-  val ALU1_SEL_LEN = 2
+  val ALU1_SEL_LEN = 3
   val ALU1_PC = 0
   val ALU1_RS1 = 1
   val ALU1_ZERO = 2
+  val ALU1_CSR = 3
 
   // selAlu2
   val ALU2_SEL_LEN = 2
   val ALU2_IMM = 0
   val ALU2_RS2 = 1
   val ALU2_ZERO = 2
+  val ALU2_RS1 = 3
 
   // br_type
   val BR_TYPE_LEN = 3
@@ -87,11 +89,12 @@ case class DecoderParameter() extends SerializableModuleParameter {
   val LD_LBU = 5
 
   // wb_sel
-  val WB_SEL_LEN = 2
+  val WB_SEL_LEN = 3
   val WB_NONE = 0
   val WB_ALU = 1
   val WB_MEM = 2
   val WB_PC4 = 3
+  val WB_CSR = 4
 
   val ALUFN_LEN = 4
   val ALU_ADD = 0
@@ -104,16 +107,26 @@ case class DecoderParameter() extends SerializableModuleParameter {
   val ALU_SLTU = 7
   val ALU_SRL = 8
   val ALU_SRA = 9
+  val ALU_COPY2 = 10
+
+  // csr
+  val CSR_TYPE_LEN = 3
+  val CSR_NONE = 0
+  val CSR_W = 1
+  val CSR_S = 2
+  val CSR_C = 3
+  val CSR_ECALL = 4 // TODO handle ecall and mret
+  val CSR_MRET = 5
 
   private val instructionTable = org.chipsalliance.rvdecoderdb.instructions(org.chipsalliance.rvdecoderdb.extractResource(getClass.getClassLoader))
-  private val targetSets = Set("rv_i", "rv32_i") // TODO add more instructionSets
+  private val targetSets = Set("rv_system", "rv_zicsr", "rv_i", "rv32_i") // TODO add more instructionSets
   private val instructionDecodePattern = instructionTable
     .filter(instr => targetSets.contains(instr.instructionSet.name))
     .filter(_.pseudoFrom.isEmpty)
     .map(HiaDecodePattern(_))
     .toSeq
 
-  private val instructionDecodeFields = Seq(selPC, immType, brType, selAlu1, selAlu2, aluFn, stType, ldType, selWB)
+  private val instructionDecodeFields = Seq(selPC, immType, brType, selAlu1, selAlu2, aluFn, stType, ldType, selWB, csrType)
 
   val table: DecodeTable[HiaDecodePattern] = new DecodeTable[HiaDecodePattern](
     instructionDecodePattern,
@@ -136,12 +149,12 @@ case class DecoderParameter() extends SerializableModuleParameter {
 
     override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
       case i if Seq("jal", "jalr").contains(i) => UOPPC.alu
-      case i if Seq("mret").contains(i) => UOPPC.epc
-      case _ => UOPPC.pc4
+      case i if Seq("mret").contains(i)        => UOPPC.epc
+      case _                                   => UOPPC.pc4
     }
 
     override def uopType: UOPPC.type = UOPPC
-  }  
+  }
 
   object UOPIMM extends UOP {
     def width = IMM_SEL_LEN
@@ -219,6 +232,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
     def rs1: BitPat = encode(ALU1_RS1)
 
     def zero: BitPat = encode(ALU1_ZERO)
+
+    def csr: BitPat = encode(ALU1_CSR)
   }
 
   object selAlu1 extends UOPDecodeField[HiaDecodePattern] {
@@ -255,8 +270,9 @@ case class DecoderParameter() extends SerializableModuleParameter {
             "and"
           ).contains(i) =>
         UOPA1.rs1
-      case i if Seq("lui").contains(i) => UOPA1.zero
-      case _                           => UOPA1.dontCare
+      case i if Seq("lui").contains(i)                                                   => UOPA1.zero
+      case i if Seq("csrrc", "csrrs", "csrrci", "csrrsi").contains(i) => UOPA1.csr
+      case _                                                                             => UOPA1.dontCare
     }
     override def uopType: UOPA1.type = UOPA1
   }
@@ -267,6 +283,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
     def imm: BitPat = encode(ALU2_IMM)
 
     def rs2: BitPat = encode(ALU2_RS2)
+
+    def rs1: BitPat = encode(ALU2_RS1)
 
     def zero: BitPat = encode(ALU2_ZERO)
   }
@@ -299,10 +317,14 @@ case class DecoderParameter() extends SerializableModuleParameter {
             "sltiu",
             "xori",
             "ori",
-            "andi"
+            "andi",
+            "csrrci",
+            "csrrsi",
+            "csrrwi"
           ).contains(i) =>
         UOPA2.imm
       case i if Seq("add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and").contains(i) => UOPA2.rs2
+      case i if Seq("csrrc", "csrrs", "csrrw").contains(i)                                            => UOPA2.rs1
       case _                                                                                          => UOPA2.dontCare
     }
     override def uopType: UOPA2.type = UOPA2
@@ -321,6 +343,7 @@ case class DecoderParameter() extends SerializableModuleParameter {
     def sltu: BitPat = encode(ALU_SLTU)
     def srl:  BitPat = encode(ALU_SRL)
     def sra:  BitPat = encode(ALU_SRA)
+    def copy2: BitPat = encode(ALU_COPY2)
   }
 
   object aluFn extends UOPDecodeField[HiaDecodePattern] {
@@ -332,14 +355,15 @@ case class DecoderParameter() extends SerializableModuleParameter {
             .contains(i) =>
         UOPALU.add
       case i if Seq("sub").contains(i)           => UOPALU.sub
-      case i if Seq("andi", "and").contains(i)   => UOPALU.and
-      case i if Seq("ori", "or").contains(i)     => UOPALU.or
+      case i if Seq("andi", "and", "csrrc", "csrrci").contains(i)   => UOPALU.and
+      case i if Seq("ori", "or", "csrrs", "csrrsi").contains(i)     => UOPALU.or
       case i if Seq("xori", "xor").contains(i)   => UOPALU.xor
       case i if Seq("slti", "slt").contains(i)   => UOPALU.slt
       case i if Seq("slli", "sll").contains(i)   => UOPALU.sll
       case i if Seq("sltiu", "sltu").contains(i) => UOPALU.sltu
       case i if Seq("srli", "srl").contains(i)   => UOPALU.srl
       case i if Seq("srai", "sra").contains(i)   => UOPALU.sra
+      case i if Seq("csrrw", "csrrwi").contains(i)   => UOPALU.copy2
       case _                                     => UOPALU.dontCare
     }
 
@@ -410,6 +434,8 @@ case class DecoderParameter() extends SerializableModuleParameter {
 
     def pc4: BitPat = encode(WB_PC4)
 
+    def csr: BitPat = encode(WB_CSR)
+
     def none: BitPat = encode(WB_NONE) // be used to get wb_en
   }
 
@@ -450,10 +476,39 @@ case class DecoderParameter() extends SerializableModuleParameter {
         UOPWB.alu
       case i if Seq("lw", "lh", "lb", "lhu", "lbu").contains(i) => UOPWB.mem
       case i if Seq("jal", "jalr").contains(i)                  => UOPWB.pc4
+      case i if Seq("csrrc", "csrrs", "csrrw", "csrrci", "csrrsi", "csrrwi").contains(i) => UOPWB.csr
       case _                                                    => UOPWB.none
     }
 
     override def uopType: UOPWB.type = UOPWB
+  }
+
+  object UOPCSR extends UOP {
+    def width = CSR_TYPE_LEN
+
+    def none: BitPat = encode(CSR_NONE)
+
+    def w: BitPat = encode(CSR_W)
+
+    def s: BitPat = encode(CSR_S)
+
+    def c: BitPat = encode(CSR_C)
+
+    def mret: BitPat = encode(CSR_MRET)
+  }
+
+  object csrType extends UOPDecodeField[HiaDecodePattern] {
+    override def name: String = "csr_type"
+
+    override def genTable(op: HiaDecodePattern): BitPat = op.instruction.name match {
+      case i if Seq("csrrw", "csrrwi").contains(i) => UOPCSR.w
+      case i if Seq("csrrs", "csrrsi").contains(i) => UOPCSR.s
+      case i if Seq("csrrc", "csrrci").contains(i) => UOPCSR.c
+      case i if Seq("mret").contains(i)            => UOPCSR.mret
+      case _                                       => UOPCSR.none
+    }
+
+    override def uopType: UOPCSR.type = UOPCSR
   }
 }
 

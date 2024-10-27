@@ -79,6 +79,7 @@ class ExecuteStageMessage(xlen: Int, decoderParameter: DecoderParameter) extends
   val pc = Output(UInt(xlen.W))
   val alu_out = Output(UInt(xlen.W))
   val st_data = Output(UInt(xlen.W))
+  val csr_data = Output(UInt(xlen.W))
 
   val ld_type = Output(UInt(decoderParameter.LD_TYPE_LEN.W))
   val st_type = Output(UInt(decoderParameter.ST_TYPE_LEN.W))
@@ -127,4 +128,11 @@ class regWriteIO(xlen: Int) extends Bundle {
 class RegFileIO(xlen: Int) extends Bundle {
   val r = new regReadIO(xlen)
   val w = new regWriteIO(xlen)
+}
+
+class CSRFileIO(xlen: Int) extends Bundle {
+  val csr_addr = Input(UInt(12.W))
+  val rdata = Output(UInt(xlen.W))
+  val wdata = Input(UInt(xlen.W))
+  val wen = Input(Bool())
 }

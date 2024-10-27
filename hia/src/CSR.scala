@@ -11,7 +11,7 @@ object CSRParameter {
     upickle.default.macroRW[CSRParameter]
 }
 
-case class CSRParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {
+case class CSRParameter(xlen: Int) extends SerializableModuleParameter {
   // Supports machine & user modes
   val PRV_U = 0x0.U(2.W)
   val PRV_M = 0x3.U(2.W)
@@ -46,10 +46,7 @@ class CSRInterface(parameter: CSRParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(Bool())
 
-  val csr_addr = Input(UInt(12.W))
-  val rdata = Output(UInt(parameter.xlen.W))
-  val wdata = Input(UInt(parameter.xlen.W))
-  val wen = Input(Bool())
+  val csr = new CSRFileIO(parameter.xlen)
 }
 
 @instantiable
@@ -137,25 +134,25 @@ class CSR(val parameter: CSRParameter)
     BitPat(parameter.MHARTID) -> mhartid
   )
 
-  io.rdata := Lookup(io.csr_addr, 0.U, csrFile).asUInt
+  io.csr.rdata := Lookup(io.csr.csr_addr, 0.U, csrFile).asUInt
 
-  when(io.wen) {
-    when(io.csr_addr === parameter.MSTATUS) {
-    PRV1 := io.wdata(5, 4)
-    IE1 := io.wdata(3)
-    PRV := io.wdata(2, 1)
-    IE := io.wdata(0)
+  when(io.csr.wen) {
+    when(io.csr.csr_addr === parameter.MSTATUS) {
+    PRV1 := io.csr.wdata(5, 4)
+    IE1 := io.csr.wdata(3)
+    PRV := io.csr.wdata(2, 1)
+    IE := io.csr.wdata(0)
     }
-    .elsewhen(io.csr_addr === parameter.MIP) {
-        MTIP := io.wdata(7)
-        MSIP := io.wdata(3)
+    .elsewhen(io.csr.csr_addr === parameter.MIP) {
+        MTIP := io.csr.wdata(7)
+        MSIP := io.csr.wdata(3)
     }
-    .elsewhen(io.csr_addr === parameter.MIE) {
-        MTIE := io.wdata(7)
-        MSIE := io.wdata(3)
+    .elsewhen(io.csr.csr_addr === parameter.MIE) {
+        MTIE := io.csr.wdata(7)
+        MSIE := io.csr.wdata(3)
     }
-    .elsewhen(io.csr_addr === parameter.MSCRATCH) { mscratch := io.wdata }
-    .elsewhen(io.csr_addr === parameter.MEPC) { mepc := Cat(io.wdata(xlen - 1, 2), 0.U(2.W)) }
-    .elsewhen(io.csr_addr === parameter.MCAUSE) { mcause := io.wdata & (BigInt(1) << (xlen - 1) | 0xf).U }
+    .elsewhen(io.csr.csr_addr === parameter.MSCRATCH) { mscratch := io.csr.wdata }
+    .elsewhen(io.csr.csr_addr === parameter.MEPC) { mepc := Cat(io.csr.wdata(xlen - 1, 2), 0.U(2.W)) }
+    .elsewhen(io.csr.csr_addr === parameter.MCAUSE) { mcause := io.csr.wdata & (BigInt(1) << (xlen - 1) | 0xf).U }
     }
 }
