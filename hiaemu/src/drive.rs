@@ -134,6 +134,10 @@ impl Driver {
     get_time() / self.clock_flip_time
   }
 
+  fn set_last_input_cycle(&mut self) {
+    self.last_input_cycle = self.get_tick();
+  }
+
   pub(crate) fn new(scope: SvScope, args: &HiaArgs) -> Self {
     let (entry, shadow_mem, _fn_sym_tab) =
       Self::load_elf(Path::new(&args.elf_file)).expect("fail to load ELF file");
@@ -234,6 +238,7 @@ impl Driver {
   }
 
   pub(crate) fn instruction_fetch_axi(&mut self, addr: u32) -> AXIReadPayload {
+    self.set_last_input_cycle();
     if addr as usize >= MEM_SIZE {
       error!("instruction_fetch_axi: addr={:#x} out of range", addr);
       return AXIReadPayload { valid: 0, bits: 0 };
@@ -246,6 +251,7 @@ impl Driver {
   }
 
   pub(crate) fn load_store_axi_r(&mut self, addr: u32) -> AXIReadPayload {
+    self.set_last_input_cycle();
     if addr as usize >= MEM_SIZE {
       error!("load_store_axi_r: addr={:#x} out of range", addr);
       return AXIReadPayload { valid: 0, bits: 0 };
@@ -258,6 +264,7 @@ impl Driver {
   }
 
   pub(crate) fn load_store_axi_w(&mut self, addr: u32, data: u32) -> AXIWritePayload {
+    self.set_last_input_cycle();
     if addr as usize >= MEM_SIZE {
       error!("load_store_axi_r: addr={:#x} out of range", addr);
       return AXIWritePayload { success: false as u8 };
