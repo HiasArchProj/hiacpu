@@ -12,7 +12,7 @@ object FetchStageParameter {
 }
 
 case class FetchStageParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {
-  val PC_START = 0x8000_0000
+  val PC_START = "h_8000_0000".U(xlen.W)
   val PC_ALU = decoderParameter.PC_ALU.U(decoderParameter.PC_SEL_LEN.W)
 }
 
@@ -22,7 +22,7 @@ class FetchStageInterface(parameter: FetchStageParameter) extends Bundle {
   val reset = Input(Bool())
 
   val out = Decoupled(new FetchStageMessage(parameter.xlen))
-  val icache = Flipped(new ICacheIO(parameter.xlen))
+  val icache = Flipped(new ICacheIO(parameter.xlen)) // FIXME redundant interface exists, use least interface
   val bypass = Flipped(new ExecuteStageBypassMessage(parameter.xlen, parameter.decoderParameter.PC_SEL_LEN))
 }
 
@@ -37,7 +37,7 @@ class FetchStage(val parameter: FetchStageParameter)
   override protected def implicitReset: Reset = io.reset
   val xlen = parameter.xlen
 
-  val pc = RegInit((parameter.PC_START-4).U(xlen.W))
+  val pc = RegInit(parameter.PC_START)
   val branch = (io.bypass.pc_sel === parameter.PC_ALU) || io.bypass.taken
 
   val s_idle :: s_after_branch :: Nil = Enum(2)
@@ -59,9 +59,8 @@ class FetchStage(val parameter: FetchStageParameter)
   pc := next_pc
 
   // connect cache and stage reg
-  io.icache.raddr := next_pc
+  io.icache.raddr := pc
   io.out.bits.pc := pc
-  io.out.bits.inst := io.icache.rdata
 }
 
 
@@ -84,6 +83,7 @@ class ExecuteStageInterface(parameter: ExecuteStageParameter) extends Bundle {
   val out = Decoupled(new ExecuteStageMessage(parameter.xlen, parameter.decoderParameter))
   val in = Flipped(Decoupled(new FetchStageMessage(parameter.xlen)))
 
+  val inst = Input(UInt(parameter.xlen.W))
   val rio = Flipped(new regReadIO(parameter.xlen))
   val bypass_out = new ExecuteStageBypassMessage(parameter.xlen, parameter.decoderParameter.PC_SEL_LEN)
   val bypass_in = Flipped(new WriteBackStageBypassMessage(parameter.xlen, parameter.decoderParameter.WB_SEL_LEN))
@@ -100,7 +100,7 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
   override protected def implicitReset: Reset = io.reset
 
   val xlen = parameter.xlen
-  val inst = io.in.bits.inst
+  val inst = io.inst
   val pc = io.in.bits.pc
 
   val decoder: Instance[Decoder] = Instantiate(new Decoder(parameter.decoderParameter))
@@ -317,6 +317,7 @@ class Core(val parameter: CoreParameter)
 
   fetchStage.io.icache <> io.icache
   fetchStage.io.bypass <> executeStage.io.bypass_out
+  executeStage.io.inst := io.icache.rdata
   executeStage.io.bypass_in <> writebackStage.io.bypass
   executeStage.io.rio <> gpr.io.r
   writebackStage.io.rio <> gpr.io.w

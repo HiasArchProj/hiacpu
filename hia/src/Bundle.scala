@@ -71,7 +71,6 @@ object Cause {
 }
 
 class FetchStageMessage(xlen: Int) extends Bundle {
-  val inst = Output(UInt(xlen.W))
   val pc = Output(UInt(xlen.W))
 }
 
