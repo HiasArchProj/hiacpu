@@ -90,6 +90,7 @@ class ExecuteStageBypassMessage(xlen: Int, pc_sel_len: Int) extends Bundle {
   val pc_sel = UInt(pc_sel_len.W)
   val taken = Bool()
   val alu_out = UInt(xlen.W)
+  val epc = UInt(xlen.W)
 }
 
 class WriteBackStageBypassMessage(xlen: Int, wb_sel_len: Int) extends  Bundle {

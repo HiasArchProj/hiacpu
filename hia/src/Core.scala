@@ -14,6 +14,7 @@ object FetchStageParameter {
 case class FetchStageParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {
   val PC_START = "h_8000_0000".U(xlen.W)
   val PC_ALU = decoderParameter.PC_ALU.U(decoderParameter.PC_SEL_LEN.W)
+  val PC_EPC = decoderParameter.PC_EPC.U(decoderParameter.PC_SEL_LEN.W)
 }
 
 
@@ -39,6 +40,7 @@ class FetchStage(val parameter: FetchStageParameter)
 
   val pc = RegInit(parameter.PC_START)
   val branch = (io.bypass.pc_sel === parameter.PC_ALU) || io.bypass.taken
+  val epc = (io.bypass.pc_sel === parameter.PC_EPC) 
 
   val s_idle :: s_after_branch :: Nil = Enum(2)
   val state = RegInit(s_idle)
@@ -47,12 +49,13 @@ class FetchStage(val parameter: FetchStageParameter)
     s_after_branch -> s_idle
   ))
 
-  io.out.valid := (~io.reset.asBool) && (~branch || (state === s_after_branch))// FIXME maybe wrong
+  io.out.valid := (~io.reset.asBool) && (~branch || (state === s_after_branch)) && (~epc)// FIXME maybe wrong
 
   val next_pc = MuxCase(
     (pc+4.U),
     Seq(
       (branch) -> Cat(io.bypass.alu_out(xlen - 1, 1), 0.U(1.W)),
+      (epc) -> io.bypass.epc,
       (~io.out.ready) -> pc
     )
   )
@@ -127,26 +130,28 @@ class ExecuteStage(val parameter: ExecuteStageParameter)
   val csr_data = io.csr.rdata
   val csrType = decodeOutput(parameter.decoderParameter.csrType)
   val CSR_NONE = parameter.decoderParameter.CSR_NONE.U(parameter.decoderParameter.CSR_TYPE_LEN.W)
-  io.csr.csr_addr := inst(31, 20)
+  val CSR_MRET = parameter.decoderParameter.CSR_MRET.U(parameter.decoderParameter.CSR_TYPE_LEN.W)
+  io.csr.csr_addr := Mux(csrType===CSR_MRET, 0x341.U(12.W), inst(31, 20)) // TODO replace magic numvber
   io.csr.wen := Mux(csrType === CSR_NONE, false.B, true.B)
   io.csr.wdata := alu.io.out
   io.out.bits.csr_data := csr_data
+  io.bypass_out.epc := csr_data
 
   // ALU 
   alu.io.alu_op := decodeOutput(parameter.decoderParameter.aluFn)
-  alu.io.A := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu1), io.gpr_read.rsp.data1)(
+  alu.io.A := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu1), rs1)(
     Seq(
       parameter.decoderParameter.ALU1_PC.U -> pc,
-      parameter.decoderParameter.ALU1_RS1.U -> io.gpr_read.rsp.data1,
+      parameter.decoderParameter.ALU1_RS1.U -> rs1,
       parameter.decoderParameter.ALU1_ZERO.U -> 0.U(xlen.W),
       parameter.decoderParameter.ALU1_CSR.U -> csr_data
     )
   )
-  alu.io.B := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu2), io.gpr_read.rsp.data2)(
+  alu.io.B := MuxLookup(decodeOutput(parameter.decoderParameter.selAlu2), rs2)(
     Seq(
       parameter.decoderParameter.ALU2_IMM.U -> imm_out,
-      parameter.decoderParameter.ALU2_RS2.U -> io.gpr_read.rsp.data2,
-      parameter.decoderParameter.ALU2_RS1.U -> io.gpr_read.rsp.data1,
+      parameter.decoderParameter.ALU2_RS2.U -> rs2,
+      parameter.decoderParameter.ALU2_RS1.U -> rs1,
       parameter.decoderParameter.ALU2_ZERO.U -> 0.U(xlen.W)
     )
   )
