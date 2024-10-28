@@ -32,7 +32,7 @@ class readRespIO(xlen: Int) extends Bundle {
 }
 
 class readIO(xlen: Int) extends Bundle {
-  val req = new readReqIO(xlen)
+  val req = Valid(new readReqIO(xlen))
   val resp = Flipped(Valid(new readRespIO(xlen)))
 }
 

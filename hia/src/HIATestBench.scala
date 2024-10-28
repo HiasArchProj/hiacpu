@@ -77,12 +77,12 @@ class HIATestBench(val parameter: HIATestBenchParameter)
   dut.io.imem.r.resp := RawClockedNonVoidFunctionCall("hia_instructionFetchAXI", Valid(new readRespIO(parameter.hiaParameter.width)))(
     dut.io.clock,
     !dut.io.reset.asBool,
-    dut.io.imem.r.req.addr
+    dut.io.imem.r.req.bits.addr
   )
   dut.io.dmem.r.resp := RawClockedNonVoidFunctionCall("hia_loadStoreAXIR", Valid(new readRespIO(parameter.hiaParameter.width)))(
     dut.io.clock,
-    !dut.io.reset.asBool,
-    dut.io.dmem.r.req.addr
+    !dut.io.reset.asBool && dut.io.dmem.r.req.valid,
+    dut.io.dmem.r.req.bits.addr
   )
   dut.io.dmem.w.resp := RawClockedNonVoidFunctionCall("hia_loadStoreAXIW", new writeRespIO(parameter.hiaParameter.width))(
     dut.io.clock,
