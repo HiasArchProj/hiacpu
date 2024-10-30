@@ -79,6 +79,22 @@ nix develop .#hia.hia-compiled
 
 The above command will provide a new bash shell with mill, circt, chisel... dependencies set up.
 
+### running flow
+
+build riscv-tests:
+
+```bash
+nix build .#riscv-tests
+```
+
+run the test cases
+
+```bash
+nix run .#hia.verilated-trace -- +elf-file=$(nix build --no-link --print-out-paths .#riscv-tests)/riscv32-unknown-elf/share/riscv-tests/isa/rv32ui-p-add +dump-start=0 +dump-end=10000 +wave-path=/tmp/wave.fst
+```
+
+
+
 ## LSP configuration
 
 wip. 

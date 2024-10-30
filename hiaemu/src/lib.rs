@@ -2,6 +2,7 @@ use plusarg::PlusArgMatcher;
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
+mod bus;
 pub mod dpi;
 pub mod drive;
 pub mod plusarg;

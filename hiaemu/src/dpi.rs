@@ -1,4 +1,3 @@
-use core::fmt;
 use std::ffi::{c_char, c_longlong, CString};
 use std::sync::Mutex;
 
