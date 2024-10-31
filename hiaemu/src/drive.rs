@@ -36,8 +36,8 @@ pub(crate) struct Driver {
   dump_started: bool,
 
   last_input_cycle: u64,
+  exit: bool,
 
-  entry: u64,
   shadow_bus: ShadowBus,
 }
 
@@ -51,7 +51,7 @@ impl Driver {
   }
 
   pub(crate) fn new(scope: SvScope, args: &HiaArgs) -> Self {
-    let (entry, shadow_bus, _fn_sym_tab) =
+    let (_entry, shadow_bus, _fn_sym_tab) =
       Self::load_elf(Path::new(&args.elf_file)).expect("fail to load ELF file");
 
     Self {
@@ -69,8 +69,8 @@ impl Driver {
       timeout: env!("DESIGN_TIMEOUT").parse().unwrap(),
       clock_flip_time: env!("CLOCK_FLIP_TIME").parse().unwrap(),
       last_input_cycle: 0,
+      exit: false,
 
-      entry,
       shadow_bus,
     }
   }
@@ -153,6 +153,11 @@ impl Driver {
 
   pub(crate) fn instruction_fetch_axi(&mut self, addr: u32) -> AXIReadPayload {
     self.set_last_input_cycle();
+
+    if self.exit {
+      return AXIReadPayload { valid: false as u8, bits: 0 };
+    }
+
     let inst = self.shadow_bus.read_mem(addr, 4);
     let bits = inst.iter().fold(0, |acc, &x| (acc << 8) | x as u32);
     debug!("instruction_fetch_axi: addr={:#x}, inst={:#x}", addr, bits);
@@ -161,14 +166,29 @@ impl Driver {
 
   pub(crate) fn load_store_axi_r(&mut self, addr: u32) -> AXIReadPayload {
     self.set_last_input_cycle();
+
+    if self.exit {
+      return AXIReadPayload { valid: false as u8, bits: 0 };
+    }
+
     let inst = self.shadow_bus.read_mem(addr, 4);
     let bits = inst.iter().fold(0, |acc, &x| (acc << 8) | x as u32);
     debug!("load_store_axi_r: addr={:#x}, data={:#x}", addr, bits);
-    AXIReadPayload { valid: 0, bits }
+    AXIReadPayload { valid: true as u8, bits }
   }
 
   pub(crate) fn load_store_axi_w(&mut self, addr: u32, data: u32) -> AXIWritePayload {
     self.set_last_input_cycle();
+
+    // exit code
+    if self.exit {
+      return AXIWritePayload { success: true as u8 };
+    }
+
+    if addr == 0x1145_1400 && data == 0xdead_beef {
+      self.exit = true;
+    }
+
     self.shadow_bus.write_mem(addr, data);
     debug!("load_store_axi_w: addr={:#x}, data={:#x}", addr, data);
     AXIWritePayload { success: true as u8 }
@@ -186,6 +206,9 @@ impl Driver {
         tick, self.last_input_cycle
       );
       WATCHDOG_TIMEOUT
+    } else if self.exit {
+      info!("[{tick}] watchdog finish, exiting");
+      WATCHDOG_FINISH
     } else {
       #[cfg(feature = "trace")]
       if self.dump_end != 0 && tick > self.dump_end {

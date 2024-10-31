@@ -42,6 +42,11 @@ final: prev: {
       fetchSubmodules = true;
     };
 
+    postUnpack = ''
+      rm -rf $sourceRoot/env
+      cp -r ${../nix/dependencies/riscv-test-env} $sourceRoot/env
+    '';
+
     enableParallelBuilding = true;
 
     configureFlags = [
