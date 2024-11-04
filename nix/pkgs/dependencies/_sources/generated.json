@@ -18,5 +18,47 @@
             "type": "github"
         },
         "version": "9c1829e6afe8a08630c90d5a0f30bce9c487075f"
+    },
+    "riscv-opcodes": {
+        "cargoLocks": null,
+        "date": "2024-10-11",
+        "extract": null,
+        "name": "riscv-opcodes",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "riscv",
+            "repo": "riscv-opcodes",
+            "rev": "8ab52afb50d25c6798819008252f93576f0d6a43",
+            "sha256": "sha256-TtJKvbkqjKPhOW/ZEVa4INKNQqK6Gu/nOgcFvdqh8Lk=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "8ab52afb50d25c6798819008252f93576f0d6a43"
+    },
+    "rvdecoderdb": {
+        "cargoLocks": null,
+        "date": "2024-10-10",
+        "extract": null,
+        "name": "rvdecoderdb",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "sequencer",
+            "repo": "rvdecoderdb",
+            "rev": "0879de48edbd738ce390e2327eae5c23f7f33778",
+            "sha256": "sha256-mWKxI/IP5VrZuXQF3Wf4+m75ccddcGe4DPhcz8AvouA=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "0879de48edbd738ce390e2327eae5c23f7f33778"
     }
 }

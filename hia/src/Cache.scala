@@ -35,17 +35,18 @@ class Cache(val parameter: CacheParameter)
   override protected def implicitReset: Reset = io.reset
 
   // icache read memory
-  io.imem.r.req.addr := io.icache.addr
-  io.icache.valid := io.imem.r.resp.valid
-  io.icache.data := io.imem.r.resp.bits.data
+  io.imem.r.req.bits.addr := io.icache.raddr
+  io.imem.r.req.valid := true.B // FIXME modify this after modify interface
+  io.icache.rdata := io.imem.r.resp.bits.data
+  io.icache.rvalid := io.imem.r.resp.valid
   
   // dcache read memory
-  io.dmem.r.req.addr := io.dcache.addr
-  io.dcache.valid := io.dmem.r.resp.valid
-  io.dcache.data := io.dmem.r.resp.bits.data
+  io.dmem.r.req.bits.addr := io.dcache.raddr
+  io.dmem.r.req.valid := io.dcache.ren
+  io.dcache.rdata := io.dmem.r.resp.bits.data
 
   // dcache write memory
   io.dmem.w.req.valid := io.dcache.wen
-  io.dmem.w.req.bits.addr := io.dcache.addr
+  io.dmem.w.req.bits.addr := io.dcache.waddr
   io.dmem.w.req.bits.data := io.dcache.wdata
 }

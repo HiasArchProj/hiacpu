@@ -30,6 +30,30 @@ trait HasChisel extends ScalaModule {
   )
 }
 
+trait HasRVDecoderDB extends ScalaModule {
+  def rvdecoderdbModule: ScalaModule
+  def riscvOpcodesPath: T[PathRef]
+  def moduleDeps = super.moduleDeps ++ Seq(rvdecoderdbModule)
+  def riscvOpcodesTar: T[PathRef] = T {
+    val tmpDir = os.temp.dir()
+    os.makeDir(tmpDir / "unratified")
+    os.walk(riscvOpcodesPath().path)
+      .filter(f =>
+        f.baseName.startsWith("rv128_") ||
+          f.baseName.startsWith("rv64_") ||
+          f.baseName.startsWith("rv32_") ||
+          f.baseName.startsWith("rv_") ||
+          f.ext == "csv"
+      ).groupBy(_.segments.contains("unratified")).map {
+          case (true, fs) => fs.map(os.copy.into(_, tmpDir / "unratified"))
+          case (false, fs) => fs.map(os.copy.into(_, tmpDir))
+        }
+    os.proc("tar", "cf", T.dest / "riscv-opcodes.tar", ".").call(tmpDir)
+    PathRef(T.dest)
+  }
+  override def resources: T[Seq[PathRef]] = super.resources() ++ Some(riscvOpcodesTar())
+}
+
 trait ElaboratorModule extends ScalaModule with HasChisel {
   def generators:            Seq[ScalaModule]
   def panamaconverterModule: ScalaModule

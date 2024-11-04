@@ -5,14 +5,12 @@ import chisel3.util._
 import chisel3.experimental.hierarchy.{instantiable, public, Instance, Instantiate}
 import chisel3.experimental.{SerializableModule, SerializableModuleParameter}
 
-// import org.chipsalliance.hia.Cache.{DCacheIO, ICacheIO}
-
 object BrCondParameter {
   implicit def rwP: upickle.default.ReadWriter[BrCondParameter] =
     upickle.default.macroRW[BrCondParameter]
 }
 
-case class BrCondParameter(xlen: Int, ctrlParameter: ControlParameter) extends SerializableModuleParameter {}
+case class BrCondParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {}
 
 class BrCondInterface(parameter: BrCondParameter) extends Bundle {
   val rs1 = Input(UInt(parameter.xlen.W))
@@ -26,13 +24,12 @@ class BrCond(val parameter: BrCondParameter)
     extends FixedIORawModule(new BrCondInterface(parameter))
     with SerializableModule[BrCondParameter]
     with Public {
-  val BR_XXX = parameter.ctrlParameter.BR_XXX
-  val BR_LTU = parameter.ctrlParameter.BR_LTU
-  val BR_LT = parameter.ctrlParameter.BR_LT
-  val BR_EQ = parameter.ctrlParameter.BR_EQ
-  val BR_GEU = parameter.ctrlParameter.BR_GEU
-  val BR_GE = parameter.ctrlParameter.BR_GE
-  val BR_NE = parameter.ctrlParameter.BR_NE
+  val BR_LTU = parameter.decoderParameter.BR_LTU.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_LT = parameter.decoderParameter.BR_LT.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_EQ = parameter.decoderParameter.BR_EQ.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_GEU = parameter.decoderParameter.BR_GEU.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_GE = parameter.decoderParameter.BR_GE.U(parameter.decoderParameter.BR_TYPE_LEN.W)
+  val BR_NE = parameter.decoderParameter.BR_NE.U(parameter.decoderParameter.BR_TYPE_LEN.W)
 
   val eq = io.rs1 === io.rs2
   val neq = !eq

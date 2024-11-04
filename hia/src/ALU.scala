@@ -10,20 +10,18 @@ object ALUParameter {
     upickle.default.macroRW[ALUParameter]
 }
 
-case class ALUParameter(xlen: Int) extends SerializableModuleParameter {
-  val ALU_ADD = 0.U(4.W)
-  val ALU_SUB = 1.U(4.W)
-  val ALU_AND = 2.U(4.W)
-  val ALU_OR = 3.U(4.W)
-  val ALU_XOR = 4.U(4.W)
-  val ALU_SLT = 5.U(4.W)
-  val ALU_SLL = 6.U(4.W)
-  val ALU_SLTU = 7.U(4.W)
-  val ALU_SRL = 8.U(4.W)
-  val ALU_SRA = 9.U(4.W)
-  val ALU_COPY_A = 10.U(4.W)
-  val ALU_COPY_B = 11.U(4.W)
-  val ALU_XXX = 15.U(4.W)
+case class ALUParameter(xlen: Int, decoderParameter: DecoderParameter) extends SerializableModuleParameter {
+  val ALU_ADD = decoderParameter.ALU_ADD
+  val ALU_SUB = decoderParameter.ALU_SUB
+  val ALU_AND = decoderParameter.ALU_AND
+  val ALU_OR = decoderParameter.ALU_OR
+  val ALU_XOR = decoderParameter.ALU_XOR
+  val ALU_SLT = decoderParameter.ALU_SLT
+  val ALU_SLL = decoderParameter.ALU_SLL
+  val ALU_SLTU =decoderParameter.ALU_SLTU
+  val ALU_SRL = decoderParameter.ALU_SRL
+  val ALU_SRA = decoderParameter.ALU_SRA
+  val ALU_COPY2 = decoderParameter.ALU_COPY2
 }
 
 class ALUInterface(parameter: ALUParameter) extends Bundle {
@@ -31,7 +29,6 @@ class ALUInterface(parameter: ALUParameter) extends Bundle {
   val B = Input(UInt(parameter.xlen.W))
   val alu_op = Input(UInt(4.W))
   val out = Output(UInt(parameter.xlen.W))
-  val sum = Output(UInt(parameter.xlen.W))
 }
 
 @instantiable
@@ -39,18 +36,17 @@ class ALU(val parameter: ALUParameter)
     extends FixedIORawModule(new ALUInterface(parameter))
     with SerializableModule[ALUParameter]
     with Public {
-  val ALU_ADD = parameter.ALU_ADD
-  val ALU_SUB = parameter.ALU_SUB
-  val ALU_AND = parameter.ALU_AND
-  val ALU_OR = parameter.ALU_OR
-  val ALU_XOR = parameter.ALU_XOR
-  val ALU_SLT = parameter.ALU_SLT
-  val ALU_SLL = parameter.ALU_SLL
-  val ALU_SLTU = parameter.ALU_SLTU
-  val ALU_SRL = parameter.ALU_SRL
-  val ALU_SRA = parameter.ALU_SRA
-  val ALU_COPY_A = parameter.ALU_COPY_A
-  val ALU_XXX = parameter.ALU_XXX
+  val ALU_ADD = parameter.ALU_ADD.U
+  val ALU_SUB = parameter.ALU_SUB.U
+  val ALU_AND = parameter.ALU_AND.U
+  val ALU_OR = parameter.ALU_OR.U
+  val ALU_XOR = parameter.ALU_XOR.U
+  val ALU_SLT = parameter.ALU_SLT.U
+  val ALU_SLL = parameter.ALU_SLL.U
+  val ALU_SLTU = parameter.ALU_SLTU.U
+  val ALU_SRL = parameter.ALU_SRL.U
+  val ALU_SRA = parameter.ALU_SRA.U
+  val ALU_COPY2 = parameter.ALU_COPY2.U
 
   val shamt = io.B(4, 0).asUInt
 
@@ -58,17 +54,15 @@ class ALU(val parameter: ALUParameter)
     Seq(
       ALU_ADD -> (io.A + io.B),
       ALU_SUB -> (io.A - io.B),
-      ALU_SRA -> (io.A.asSInt >> shamt).asUInt,
-      ALU_SRL -> (io.A >> shamt),
-      ALU_SLL -> (io.A << shamt),
-      ALU_SLT -> (io.A.asSInt < io.B.asSInt),
-      ALU_SLTU -> (io.A < io.B),
       ALU_AND -> (io.A & io.B),
       ALU_OR -> (io.A | io.B),
       ALU_XOR -> (io.A ^ io.B),
-      ALU_COPY_A -> io.A
+      ALU_SLL -> (io.A << shamt),
+      ALU_SLT -> (io.A.asSInt < io.B.asSInt),
+      ALU_SLTU -> (io.A < io.B),
+      ALU_SRL -> (io.A >> shamt),
+      ALU_SRA -> (io.A.asSInt >> shamt).asUInt,
+      ALU_COPY2 -> io.B
     )
   )
-
-  io.sum := io.A + Mux(io.alu_op(0), -io.B, io.B)
 }
