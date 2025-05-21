@@ -33,10 +33,8 @@ class HIAFormalOM(parameter: HIAFormalParameter) extends Class {
 class HIAFormalInterface(parameter: HIAFormalParameter) extends Bundle {
   val clock = Input(Clock())
   val reset = Input(if (parameter.hiaParameter.useAsyncReset) AsyncReset() else Bool())
-  val input = Flipped(Valid(new Bundle {
-    val x = UInt(parameter.hiaParameter.width.W)
-    val y = UInt(parameter.hiaParameter.width.W)
-  }))
+  val imem = new instructionFetchAXI(parameter.hiaParameter.width)
+  val dmem = new loadStoreAXI(parameter.hiaParameter.width)
   val om = Output(Property[AnyClassType]())
 }
 
@@ -59,41 +57,19 @@ class HIAFormal(val parameter: HIAFormalParameter)
   dut.io.clock := implicitClock
   dut.io.reset := implicitReset
 
-  // // LTL Checker
-  // import Sequence._
-  // val inputFire:     Sequence = dut.io.input.fire
-  // val inputNotFire:  Sequence = !dut.io.input.fire
-  // val outputFire:    Sequence = dut.io.output.valid
-  // val outputNotFire: Sequence = !dut.io.output.valid
-  // val inputNotValid: Sequence = dut.io.input.ready && !dut.io.input.valid
+  dut.io.imem <> io.imem
+  dut.io.dmem <> io.dmem
 
-  // dut.io.input.bits := io.input.bits
-  // dut.io.input.valid := io.input.valid
+  // LTL Checker
+  import Sequence._
 
-  // AssumeProperty(
-  //   inputNotValid |=> not(inputFire),
-  //   label = Some("HIA_ASSUMPTION_INPUT_NOT_VALID")
-  // )
-  // AssumeProperty(
-  //   dut.io.input.bits.x === 4.U && dut.io.input.bits.y === 6.U,
-  //   label = Some("HIA_ASSUMPTION_INPUT_4_6")
-  // )
+  val imem_req: Sequence = !io.reset.asBool && io.imem.r.req.valid
+  val imem_resp: Sequence = !io.reset.asBool && io.imem.r.resp.valid
 
-  // AssertProperty(
-  //   inputFire |=> inputNotFire.repeatAtLeast(1) ### outputFire,
-  //   label = Some("HIA_ALWAYS_RESPONSE")
-  // )
-  // AssertProperty(
-  //   inputFire |-> not(inputNotFire.repeatAtLeast(1) ### (outputNotFire.and(inputFire))),
-  //   label = Some("HIA_NO_DOUBLE_FIRE")
-  // )
-  // AssertProperty(
-  //   outputFire |-> dut.io.output.bits === 2.U,
-  //   label = Some("HIA_RESULT_IS_CORRECT")
-  // )
+  AssumeProperty(imem_req, label = Some("imem_r_valid"))
 
-  // CoverProperty(
-  //   inputNotValid,
-  //   label = Some("HIA_COVER_BACK_PRESSURE")
-  // )
+  AssertProperty(
+    imem_req |-> imem_resp,
+    label = Some("instruction_fetch_request_response"),
+  )
 }

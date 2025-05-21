@@ -7,9 +7,7 @@ clear -all
 set RESULT_PATH .
 
 # Analyze source files and property files
-analyze -sv12 \
-  ${RESULT_PATH}/HIA.sv \
-  ${RESULT_PATH}/HIAFormal.sv
+analyze -sv12 -f ${RESULT_PATH}/filelist.f
 
 # Elaborate design and properties
 elaborate -top HIAFormal
