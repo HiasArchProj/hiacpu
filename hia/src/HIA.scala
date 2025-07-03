@@ -21,6 +21,19 @@ case class HIAParameter(width: Int, useAsyncReset: Boolean) extends Serializable
   val cacheParameter = CacheParameter(width)
 }
 
+class HIAProbe(parameter: HIAParameter) extends Bundle {
+  val id_valid = Bool() // Instruction decode stage valid
+  val ex_valid = Bool() // Execute stage valid
+  val id_rs1 = Bool() // Source register 1 in decode stage
+  val id_rs2 = Bool() // Source register 2 in decode stage
+  val id_rs1_en = Bool() // Source 1 enable
+  val id_rs2_en = Bool() // Source 2 enable
+  val ex_rd = Bool() // Destination register in execute stage
+  val ex_wen = Bool() // Write enable in execute stage
+  val id_stall = Bool() // Stall signal in decode stage
+  val bypass_en = Bool() // Bypass enable signal
+}
+
 /** Metadata of [[HIA]]. */
 @instantiable
 class HIAOM(parameter: HIAParameter) extends Class {
@@ -36,6 +49,7 @@ class HIAInterface(parameter: HIAParameter) extends Bundle {
   val reset = Input(if (parameter.useAsyncReset) AsyncReset() else Bool())
   val imem = new instructionFetchAXI(parameter.width)
   val dmem = new loadStoreAXI(parameter.width)
+  val probe = Output(Probe(new HIAProbe(parameter), layers.Verification))
   val om = Output(Property[AnyClassType]())
 }
 
